@@ -12,6 +12,7 @@ import { MenusList } from './pages/MenusList';
 import { MenuBuilder } from './pages/MenuBuilder';
 import { Settings } from './pages/Settings';
 import { VenueSettings } from './pages/VenueSettings';
+import { Billing } from './pages/Billing';
 import { useEffect } from 'react';
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
         <Route path="/venues/:id/settings" element={<VenueSettings />} />
         <Route path="/menus/:id/builder" element={<MenuBuilder />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/billing" element={<Billing />} />
       </Route>
     </Routes>
   );

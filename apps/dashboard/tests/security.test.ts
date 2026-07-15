@@ -44,6 +44,7 @@ describe('Tenant Isolation and Roles', () => {
     await env.DB.prepare('INSERT INTO menus (id, venue_id, name, is_active) VALUES (?, ?, ?, 1)').bind('menu_A', 'venue_A', 'Menu A').run();
     await env.DB.prepare('INSERT INTO categories (id, menu_id, name, sort_order) VALUES (?, ?, ?, 0)').bind('cat_A', 'menu_A', 'Cat A').run();
     await env.DB.prepare('INSERT INTO items (id, category_id, name, price, is_available) VALUES (?, ?, ?, ?, 1)').bind('item_A', 'cat_A', 'Item A', 100).run();
+    await env.DB.prepare('INSERT INTO subscriptions (id, org_id, tier, status) VALUES (?, ?, ?, ?)').bind('sub_A', 'org_A', 'Business', 'active').run();
 
     // Setup Org B
     await env.DB.prepare('INSERT INTO organizations (id, name) VALUES (?, ?)').bind('org_B', 'Organization B').run();

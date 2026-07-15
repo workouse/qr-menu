@@ -3,7 +3,7 @@ import { Outlet, Link } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '../api/client';
-import { Menu, X, LayoutDashboard, MapPin, Settings, LogOut, ChevronDown, Globe, BookOpen } from 'lucide-react';
+import { Menu, X, LayoutDashboard, MapPin, Settings, LogOut, ChevronDown, Globe, BookOpen, CreditCard } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export const DashboardLayout = () => {
@@ -67,6 +67,10 @@ export const DashboardLayout = () => {
           <Link to="/settings" className="flex items-center px-4 py-3 text-indigo-100 hover:bg-indigo-800 rounded-lg transition-colors">
             <Settings size={20} className="mr-3" />
             {t('settings')}
+          </Link>
+          <Link to="/billing" className="flex items-center px-4 py-3 text-indigo-100 hover:bg-indigo-800 rounded-lg transition-colors">
+            <CreditCard size={20} className="mr-3" />
+            {t('billing', 'Billing & Subscription')}
           </Link>
           <a href="https://docs.qr-menu.workouse.com" target="_blank" rel="noopener noreferrer" className="flex items-center px-4 py-3 text-indigo-100 hover:bg-indigo-800 rounded-lg transition-colors">
             <BookOpen size={20} className="mr-3" />

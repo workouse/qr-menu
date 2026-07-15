@@ -38,3 +38,14 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           workingDirectory: 'apps/customer-menu'
           command: deploy
+
+      - name: Build Dashboard UI
+        run: pnpm --filter dashboard-ui run build
+
+      - name: Deploy Dashboard UI to Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: qr-menu-dashboard-ui
+          directory: apps/dashboard-ui/dist

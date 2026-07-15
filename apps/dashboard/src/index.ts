@@ -15,6 +15,8 @@ type Bindings = {
   AUTH0_ORG_OWNER_ROLE_ID: string;
   AUTH0_ORG_STAFF_ROLE_ID: string;
   AUTH0_SUPERADMIN_ROLE_ID: string;
+  LEMON_SQUEEZY_API_KEY: string;
+  LEMON_SQUEEZY_WEBHOOK_SECRET: string;
 };
 
 type Variables = {
@@ -248,6 +250,97 @@ app.onError((err, c) => {
   return c.json({ error: err.message, stack: err.stack }, 500);
 });
 
+// ---------------------------------------------------------------------------
+// Billing & Limits
+// ---------------------------------------------------------------------------
+
+async function checkTierLimits(c: any, orgId: string, type: 'venue' | 'menu' | 'category' | 'item', parentId?: string): Promise<boolean> {
+  const sub = await c.env.DB.prepare('SELECT * FROM subscriptions WHERE org_id = ?').bind(orgId).first() as any;
+  const tier = (sub?.status === 'active' || sub?.status === 'on_trial') ? (sub?.tier || 'Free') : 'Free';
+
+  let limits = { venues: 1, menus: 1, categories: 2, items: 10 };
+  if (tier === 'Standard') {
+    limits = { venues: 5, menus: 2, categories: 30, items: 20 };
+  } else if (tier === 'Business') {
+    limits = { venues: 5, menus: 5, categories: 30, items: 50 };
+  } else if (tier === 'Enterprise') {
+    return true; // unlimited
+  }
+
+  if (type === 'venue') {
+    const countRow = await c.env.DB.prepare('SELECT count(*) as c FROM venues WHERE org_id = ?').bind(orgId).first() as any;
+    return countRow.c < limits.venues;
+  } else if (type === 'menu' && parentId) {
+    const countRow = await c.env.DB.prepare('SELECT count(*) as c FROM menus WHERE venue_id = ?').bind(parentId).first() as any;
+    return countRow.c < limits.menus;
+  } else if (type === 'category' && parentId) {
+    const countRow = await c.env.DB.prepare('SELECT count(*) as c FROM categories WHERE menu_id = ?').bind(parentId).first() as any;
+    return countRow.c < limits.categories;
+  } else if (type === 'item' && parentId) {
+    const countRow = await c.env.DB.prepare('SELECT count(*) as c FROM items WHERE category_id = ?').bind(parentId).first() as any;
+    return countRow.c < limits.items;
+  }
+  return true;
+}
+
+app.post('/api/webhooks/lemonsqueezy', async (c) => {
+  const secret = c.env.LEMON_SQUEEZY_WEBHOOK_SECRET;
+  const signature = c.req.header('X-Signature');
+  if (!signature || !secret) return c.json({ error: 'Missing signature or secret' }, 401);
+
+  const rawBody = await c.req.text();
+  
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  
+  const hmacBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(rawBody));
+  const hmacArray = Array.from(new Uint8Array(hmacBuffer));
+  const expectedSignature = hmacArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+  if (signature !== expectedSignature) {
+    return c.json({ error: 'Invalid signature' }, 401);
+  }
+
+  let payload;
+  try {
+    payload = JSON.parse(rawBody);
+  } catch (e) {
+    return c.json({ error: 'Invalid JSON' }, 400);
+  }
+
+  const eventName = payload.meta?.event_name;
+  const customData = payload.meta?.custom_data;
+  const orgId = customData?.org_id;
+  const data = payload.data;
+  const attributes = data?.attributes;
+  const subscriptionId = data?.id;
+
+  if (orgId && attributes) {
+    const status = attributes.status;
+    const tier = attributes.product_name;
+
+    if (eventName?.startsWith('subscription_')) {
+      const id = `sub_${crypto.randomUUID()}`;
+      await c.env.DB.prepare(`
+        INSERT INTO subscriptions (id, org_id, lemon_squeezy_id, tier, status)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(org_id) DO UPDATE SET
+          lemon_squeezy_id = excluded.lemon_squeezy_id,
+          tier = excluded.tier,
+          status = excluded.status
+      `).bind(id, orgId, subscriptionId, tier, status).run();
+    }
+  }
+
+  return c.json({ success: true }, 200);
+});
+
 app.use('/*', cors());
 app.use('/api/*', requireAuth());
 
@@ -342,7 +435,8 @@ app.get('/api/organizations/:org_id', requireRole('org_owner'), async (c) => {
   const orgId = c.req.param('org_id');
   const org = await c.env.DB.prepare('SELECT * FROM organizations WHERE id = ?').bind(orgId).first() as any;
   if (!org) return c.json({ error: 'Organization not found' }, 404);
-  return c.json(org);
+  const sub = await c.env.DB.prepare('SELECT * FROM subscriptions WHERE org_id = ?').bind(orgId).first() as any;
+  return c.json({ ...org, subscription: sub });
 });
 
 app.patch('/api/organizations/:org_id', requireRole('org_owner'), async (c) => {
@@ -518,12 +612,112 @@ app.put('/api/items/:item_id/translations/:lang_code', requireRole(['org_owner',
 });
 
 // ---------------------------------------------------------------------------
+// Billing & Subscriptions
+// ---------------------------------------------------------------------------
+
+app.post('/api/organizations/:org_id/billing/checkout', requireRole('org_owner'), async (c) => {
+  const orgId = c.req.param('org_id');
+  if (!(await verifyOwnership(c, 'org', orgId))) return c.json({ error: 'Forbidden' }, 403);
+  const body = await c.req.json();
+  const tier = body.tier;
+
+  let variantId;
+  if (tier === 'Business') {
+    variantId = '1911896';
+  } else {
+    variantId = '1911881'; // Default to Standard
+  }
+
+  // Fetch store ID dynamically
+  const storesRes = await fetch('https://api.lemonsqueezy.com/v1/stores', {
+    headers: {
+      'Accept': 'application/vnd.api+json',
+      'Authorization': `Bearer ${c.env.LEMON_SQUEEZY_API_KEY}`
+    }
+  });
+  if (!storesRes.ok) return c.json({ error: 'Failed to fetch store' }, 500);
+  const storesData = await storesRes.json();
+  const storeId = storesData.data[0].id;
+
+  const response = await fetch('https://api.lemonsqueezy.com/v1/checkouts', {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/vnd.api+json',
+      'Content-Type': 'application/vnd.api+json',
+      'Authorization': `Bearer ${c.env.LEMON_SQUEEZY_API_KEY}`
+    },
+    body: JSON.stringify({
+      data: {
+        type: 'checkouts',
+        attributes: {
+          test_mode: true,
+          checkout_data: {
+            custom: {
+              org_id: orgId
+            }
+          }
+        },
+        relationships: {
+          store: {
+            data: {
+              type: 'stores',
+              id: storeId
+            }
+          },
+          variant: {
+            data: {
+              type: 'variants',
+              id: variantId
+            }
+          }
+        }
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error('Lemon Squeezy Checkout Error:', errText);
+    return c.json({ error: 'Failed to create checkout' }, 500);
+  }
+
+  const data = await response.json();
+  return c.json({ url: data.data.attributes.url });
+});
+
+app.post('/api/organizations/:org_id/billing/portal', requireRole('org_owner'), async (c) => {
+  const orgId = c.req.param('org_id');
+  if (!(await verifyOwnership(c, 'org', orgId))) return c.json({ error: 'Forbidden' }, 403);
+
+  const sub = await c.env.DB.prepare('SELECT * FROM subscriptions WHERE org_id = ? AND status = "active"').bind(orgId).first() as any;
+  if (!sub || !sub.lemon_squeezy_id) {
+    return c.json({ error: 'No active subscription found' }, 404);
+  }
+
+  const response = await fetch(`https://api.lemonsqueezy.com/v1/subscriptions/${sub.lemon_squeezy_id}`, {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/vnd.api+json',
+      'Authorization': `Bearer ${c.env.LEMON_SQUEEZY_API_KEY}`
+    }
+  });
+
+  if (!response.ok) {
+    return c.json({ error: 'Failed to fetch subscription details' }, 500);
+  }
+
+  const data = await response.json();
+  return c.json({ url: data.data.attributes.urls.customer_portal });
+});
+
+// ---------------------------------------------------------------------------
 // Venues
 // ---------------------------------------------------------------------------
 
 app.post('/api/organizations/:org_id/venues', requireRole('org_owner'), async (c) => {
   const orgId = c.req.param('org_id');
   if (!(await verifyOwnership(c, 'org', orgId))) return c.json({ error: 'Forbidden' }, 403);
+  if (!(await checkTierLimits(c, orgId, 'venue'))) return c.json({ error: 'Tier limit exceeded for venues' }, 403);
   const body = await c.req.json();
   const id = `venue_${crypto.randomUUID()}`;
 
@@ -1036,6 +1230,9 @@ app.get('/api/menus/:menu_id', requireRole(['org_owner', 'org_staff']), async (c
 app.post('/api/venues/:venue_id/menus', requireRole(['org_owner', 'org_staff']), async (c) => {
   const venueId = c.req.param('venue_id');
   if (!(await verifyOwnership(c, 'venue', venueId))) return c.json({ error: 'Forbidden' }, 403);
+  const venueRow = await c.env.DB.prepare('SELECT org_id FROM venues WHERE id = ?').bind(venueId).first() as any;
+  if (!venueRow) return c.json({ error: 'Venue not found' }, 404);
+  if (!(await checkTierLimits(c, venueRow.org_id, 'menu', venueId))) return c.json({ error: 'Tier limit exceeded for menus' }, 403);
   const body = await c.req.json();
   const id = `menu_${crypto.randomUUID()}`;
 
@@ -1095,6 +1292,9 @@ app.get('/api/menus/:menu_id/categories', requireRole(['org_owner', 'org_staff']
 app.post('/api/menus/:menu_id/categories', requireRole(['org_owner', 'org_staff']), async (c) => {
   const menuId = c.req.param('menu_id');
   if (!(await verifyOwnership(c, 'menu', menuId))) return c.json({ error: 'Forbidden' }, 403);
+  const menuRow = await c.env.DB.prepare('SELECT v.org_id FROM menus m JOIN venues v ON m.venue_id = v.id WHERE m.id = ?').bind(menuId).first() as any;
+  if (!menuRow) return c.json({ error: 'Menu not found' }, 404);
+  if (!(await checkTierLimits(c, menuRow.org_id, 'category', menuId))) return c.json({ error: 'Tier limit exceeded for categories' }, 403);
   const body = await c.req.json();
   const id = `cat_${crypto.randomUUID()}`;
 
@@ -1149,6 +1349,9 @@ app.get('/api/categories/:category_id/items', requireRole(['org_owner', 'org_sta
 app.post('/api/categories/:category_id/items', requireRole(['org_owner', 'org_staff']), async (c) => {
   const categoryId = c.req.param('category_id');
   if (!(await verifyOwnership(c, 'category', categoryId))) return c.json({ error: 'Forbidden' }, 403);
+  const catRow = await c.env.DB.prepare('SELECT v.org_id FROM categories c JOIN menus m ON c.menu_id = m.id JOIN venues v ON m.venue_id = v.id WHERE c.id = ?').bind(categoryId).first() as any;
+  if (!catRow) return c.json({ error: 'Category not found' }, 404);
+  if (!(await checkTierLimits(c, catRow.org_id, 'item', categoryId))) return c.json({ error: 'Tier limit exceeded for items' }, 403);
   const body = await c.req.json();
   const id = `item_${crypto.randomUUID()}`;
 

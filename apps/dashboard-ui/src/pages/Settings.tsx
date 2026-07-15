@@ -235,6 +235,79 @@ export const Settings = () => {
         </form>
       )}
 
+      {/* Billing & Subscription */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-100">
+          <h2 className="text-base font-semibold text-gray-800">Billing & Subscription</h2>
+          <p className="text-sm text-gray-500 mt-0.5">Manage your active subscription plan and limits.</p>
+        </div>
+        <div className="p-6">
+          {orgLoading ? (
+            <p className="text-sm text-gray-500">Loading subscription details...</p>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div>
+                  <p className="text-sm text-gray-500 font-medium mb-1">Current Plan</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-bold text-gray-900">
+                      {org?.subscription?.tier || 'Free'}
+                    </span>
+                    {(org?.subscription?.status === 'active' || org?.subscription?.status === 'on_trial') ? (
+                      <span className="px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-700 rounded-full">
+                        Active
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 text-xs font-semibold bg-gray-200 text-gray-700 rounded-full">
+                        {org?.subscription?.status || 'Active'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  {org?.subscription?.tier !== 'Enterprise' && (
+                    <a
+                      href={`https://qr-menu.lemonsqueezy.com/checkout/buy/storefront?checkout[custom][org_id]=${activeOrgId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors"
+                    >
+                      Upgrade Plan
+                    </a>
+                  )}
+                </div>
+              </div>
+              <div className="text-sm text-gray-500 bg-blue-50/50 p-4 rounded-lg border border-blue-100">
+                <p className="font-semibold text-blue-800 mb-2">Usage Limits</p>
+                <ul className="list-disc list-inside space-y-1 text-blue-700/80">
+                  {(!org?.subscription?.tier || org?.subscription?.tier === 'Free') && (
+                    <>
+                      <li>1 Venue, 1 Menu per Venue</li>
+                      <li>2 Categories, 10 Items per Category</li>
+                    </>
+                  )}
+                  {org?.subscription?.tier === 'Standard' && (
+                    <>
+                      <li>5 Venues, 2 Menus per Venue</li>
+                      <li>30 Categories, 20 Items per Category</li>
+                    </>
+                  )}
+                  {org?.subscription?.tier === 'Business' && (
+                    <>
+                      <li>5 Venues per Org, 5 Menus per Venue</li>
+                      <li>30 Categories, 50 Items per Category</li>
+                    </>
+                  )}
+                  {org?.subscription?.tier === 'Enterprise' && (
+                    <li>Unlimited usage across all limits.</li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Language Management */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center">

@@ -19,11 +19,11 @@ All phases follow a Test-Driven Development (TDD) workflow. We write tests befor
 - [x] Update `apps/dashboard`'s `POST /api/uploads` endpoint to enforce the `image/webp` type.
 
 ## Phase 4: Billing & Monetization (Lemon Squeezy)
-- [ ] TDD: Write integration tests asserting Lemon Squeezy webhook events (created, updated, canceled) correctly update the subscription status in D1.
-- [ ] Implement Lemon Squeezy webhook ingestion route/worker inside `apps/dashboard`.
-- [ ] TDD: Write tests asserting that resource creation (venues, menus, categories, items) is rejected (e.g. 403 Forbidden) if active subscription tier limits are exceeded.
-- [ ] Hook up active subscription tier checks to resource creation routes in the backend.
-- [ ] Add billing details and plan upgrade/downgrade section to the Settings page in `apps/dashboard-ui`.
+- [x] TDD: Write integration tests asserting Lemon Squeezy webhook events (created, updated, canceled) correctly update the subscription status in D1.
+- [x] Implement Lemon Squeezy webhook ingestion route/worker inside `apps/dashboard`.
+- [x] TDD: Write tests asserting that resource creation (venues, menus, categories, items) is rejected (e.g. 403 Forbidden) if active subscription tier limits are exceeded.
+- [x] Hook up active subscription tier checks to resource creation routes in the backend.
+- [x] Add billing details and plan upgrade/downgrade section to the Settings page in `apps/dashboard-ui`.
 
 ## Phase 5: Allergen & Dietary Filtering
 - [x] Create D1 migration to add dietary/allergen columns (e.g. `is_vegan`, `is_gluten_free`, `allergens` text) to the `items` table.
