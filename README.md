@@ -62,9 +62,47 @@ Deployments are automated via GitHub Actions.
 4. Push to the `master` branch. The included GitHub Action (`.github/workflows/deploy.yml`) will automatically build and deploy both the `dashboard` and `customer-menu` Workers to your Cloudflare account.
 5. (Optional) Deploy the `dashboard-ui` to Cloudflare Pages.
 
+### Manual Deployment
+
+If you prefer to deploy manually from your local machine, follow these steps:
+
+1. **Create Cloudflare Resources:**
+   Run these commands from the root and note the `id`s generated:
+   ```bash
+   npx wrangler kv:namespace create MENU_KV
+   npx wrangler d1 create qr-menu-db
+   npx wrangler r2 bucket create qr-menu-uploads
+   ```
+
+2. **Update Configuration:**
+   Copy the generated `id`s and update the corresponding bindings in:
+   - `apps/dashboard/wrangler.toml`
+   - `apps/customer-menu/wrangler.toml`
+
+3. **Apply Production Database Migrations:**
+   Run the SQL scripts against your production D1 database:
+   ```bash
+   cd apps/dashboard
+   for file in ../../packages/db/migrations/*.sql; do npx wrangler d1 execute DB --remote --file=$file; done
+   ```
+
+4. **Set Production Secrets:**
+   For both `apps/dashboard` and `apps/customer-menu`, you need to securely set your production environment variables (like Auth0 keys). From inside each app directory, run:
+   ```bash
+   npx wrangler secret put AUTH0_DOMAIN
+   npx wrangler secret put AUTH0_CLIENT_ID
+   # ... repeat for all required variables listed in .env.dist
+   ```
+
+5. **Deploy All Apps:**
+   Return to the root of the project and run the unified deploy command:
+   ```bash
+   make deploy
+   ```
+
 ## Telemetry
 
-This project optionally supports Cloudflare Web Analytics to provide privacy-first analytics for menu views. To enable this, simply set the `VITE_CF_ANALYTICS_TOKEN` environment variable during the build process, and the necessary tracking snippet will be automatically injected.
+This project uses Google Analytics to provide pageview tracking for the customer menus and dashboard. The generic tracking code (`G-S5L6XWQGWC`) is included to help track the usage of the open-source repository. If you are deploying this for your own production use, you should replace the `G-S5L6XWQGWC` tracking ID in `apps/dashboard-ui/index.html` and `apps/customer-menu/src/index.ts` with your own Google Analytics measurement ID.
 
 ## Contributing
 
