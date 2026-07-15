@@ -76,3 +76,37 @@ exports.onExecutePostLogin = async (event, api) => {
    VITE_AUTH0_CLIENT_ID=your_client_id
    VITE_AUTH0_AUDIENCE=https://api.qr-menu.example.com
    ```
+
+## 6. Configure Backend M2M Application & Role IDs
+
+For the `dashboard` worker to assign roles and manage users, it requires a Machine-to-Machine (M2M) application and the specific IDs of the roles you created in Step 3.
+
+### Create M2M Application
+1. Navigate to **Applications -> Applications**.
+2. Click **Create Application** and choose **Machine to Machine Applications**.
+3. **Name**: `QR Menu Backend API`
+4. When asked to authorize an API, select **Auth0 Management API**.
+5. Grant the following permissions (scopes):
+   - `read:users`, `update:users`, `read:roles`, `read:role_members`
+6. Click **Authorize**.
+7. Copy the **Domain**, **Client ID**, and **Client Secret**.
+
+### Retrieve Role IDs
+1. Navigate to **User Management -> Roles**.
+2. Click on the `superadmin` role. Look at the URL in your browser. It will look something like `https://manage.auth0.com/.../roles/rol_abc123.../settings`. 
+3. The string starting with `rol_` is your Role ID.
+4. Repeat this to get the IDs for `org_owner` and `org_staff`.
+
+### Update Environment Variables
+Open your `apps/dashboard/.dev.vars` (and your Cloudflare Worker secrets for production) and fill in the values:
+
+```env
+AUTH0_DOMAIN=your-tenant.us.auth0.com
+AUTH0_AUDIENCE=https://your-tenant.us.auth0.com/api/v2/
+AUTH0_M2M_CLIENT_ID=your_m2m_client_id
+AUTH0_M2M_CLIENT_SECRET=your_m2m_client_secret
+AUTH0_ORG_OWNER_ROLE_ID=rol_xxxxx
+AUTH0_ORG_STAFF_ROLE_ID=rol_yyyyy
+AUTH0_SUPERADMIN_ROLE_ID=rol_zzzzz
+```
+*Note: The `AUTH0_AUDIENCE` here must point to the Auth0 Management API (`/api/v2/`), NOT the custom API you created in Step 1.*
