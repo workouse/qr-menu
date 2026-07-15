@@ -1,0 +1,20 @@
+{
+  "name": "@qr-menu/dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "dev": "wrangler dev src/index.ts --port 8787 --inspector-port 9229"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.5.2",
+    "vitest": "^2.1.2",
+    "wrangler": "^3.80.0",
+    "typescript": "^5.6.2"
+  },
+  "dependencies": {
+    "hono": "^4.6.3",
+    "@qr-menu/auth": "workspace:*"
+  }
+}

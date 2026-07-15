@@ -1,0 +1,20 @@
+name = "qr-menu-dashboard"
+compatibility_date = "2024-04-05"
+compatibility_flags = ["nodejs_compat"]
+main = "src/index.ts"
+
+
+[dev]
+port = 8787
+[[d1_databases]]
+binding = "DB"
+database_name = "qr-menu-db"
+database_id = "fa5eb8d3-7a19-4a40-8217-725100f65729"
+
+[[kv_namespaces]]
+binding = "MENU_KV"
+id = "b0cf1e190de5456f957535ad1b6320cd"
+
+[[r2_buckets]]
+binding = "UPLOADS_BUCKET"
+bucket_name = "qr-menu-uploads"

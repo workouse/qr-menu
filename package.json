@@ -1,0 +1,16 @@
+{
+  "name": "qr-menu",
+  "version": "1.0.0",
+  "description": "High performance QR Menu system",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["qr", "menu", "restaurant"],
+  "author": "WORKOUSE",
+  "license": "CC-BY-NC-4.0",
+  "packageManager": "pnpm@10.13.1",
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  }
+}
