@@ -21,6 +21,7 @@ This is a monorepo managed with `pnpm`.
 - `apps/customer-menu`: The high-speed Edge Worker serving the customer-facing menus (compiled HTML).
 - `apps/dashboard`: The Edge Worker API powering the restaurant management dashboard.
 - `apps/dashboard-ui`: The React Frontend for the management dashboard.
+- `apps/docs`: The documentation portal.
 - `packages/auth`: Shared authentication middleware.
 - `packages/db`: Shared D1 Database schemas and logic.
 
@@ -99,6 +100,10 @@ If you prefer to deploy manually from your local machine, follow these steps:
    ```bash
    make deploy
    ```
+
+## Documentation
+
+Full documentation is available at [docs.qr-menu.workouse.com](https://docs.qr-menu.workouse.com). The source code for the documentation is located in `apps/docs`.
 
 ## Telemetry
 
