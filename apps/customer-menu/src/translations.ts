@@ -14,6 +14,10 @@ export const translations = {
     en: "Pricing",
     tr: "Fiyatlandırma"
   },
+  documentation: {
+    en: "Documentation",
+    tr: "Dokümantasyon"
+  },
   who_are_we: {
     en: "Who Are We",
     tr: "Biz Kimiz"

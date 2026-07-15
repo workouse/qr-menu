@@ -106,6 +106,7 @@ const buildHeaderHtml = (dashboardUrl: string, lang: 'en' | 'tr', currentPath: s
         <a href="#features" class="hover:text-white transition-colors">${trText('features')}</a>
         <a href="#demo" class="hover:text-white transition-colors">${trText('live_demo')}</a>
         <a href="#pricing" class="hover:text-white transition-colors">${trText('pricing')}</a>
+        <a href="https://docs.qr-menu.workouse.com" target="_blank" rel="noopener noreferrer" class="hover:text-white transition-colors">${trText('documentation')}</a>
         <a href="#about" class="hover:text-white transition-colors">${trText('who_are_we')}</a>
       ` : `
         <a href="/" class="hover:text-white transition-colors">${trText('home')}</a>
