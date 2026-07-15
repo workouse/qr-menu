@@ -4,6 +4,23 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { fetchApi } from '../api/client';
 import { Check, ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import React from 'react';
+
+class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+  render() {
+    if (this.state.hasError) {
+      return <div className="p-4 bg-red-50 text-red-500"><h1 className="font-bold">Something went wrong.</h1><pre>{this.state.error?.toString()}</pre></div>;
+    }
+    return this.props.children;
+  }
+}
 
 export const Billing = () => {
   const { getAccessTokenSilently } = useAuth0();
@@ -70,6 +87,7 @@ export const Billing = () => {
   const currentTier = subscription?.status === 'active' ? subscription.tier : 'Free';
 
   return (
+    <ErrorBoundary>
     <div className="max-w-6xl mx-auto space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">{t('billing_and_subscription', 'Billing & Subscription')}</h1>
@@ -211,5 +229,6 @@ export const Billing = () => {
         </div>
       </div>
     </div>
+    </ErrorBoundary>
   );
 };
