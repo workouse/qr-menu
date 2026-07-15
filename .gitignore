@@ -7,3 +7,4 @@ build/
 .wrangler/
 .direnv/
 .DS_Store
+.dev.vars
