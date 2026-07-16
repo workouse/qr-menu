@@ -37,6 +37,24 @@ export const Onboarding = () => {
       });
 
       await queryClient.invalidateQueries({ queryKey: ['me'] });
+
+      const selectedPlan = localStorage.getItem('selected_plan');
+      if (selectedPlan === 'Standard' || selectedPlan === 'Business') {
+        try {
+          const res = await fetchApi(`/organizations/${data.id}/billing/checkout`, {
+            method: 'POST',
+            body: JSON.stringify({ tier: selectedPlan })
+          }, getAccessTokenSilently);
+          localStorage.removeItem('selected_plan');
+          if (res.url) {
+            window.location.href = res.url;
+            return;
+          }
+        } catch (err) {
+          console.error('Failed to redirect to checkout:', err);
+        }
+      }
+      localStorage.removeItem('selected_plan');
       navigate('/');
     }
   });

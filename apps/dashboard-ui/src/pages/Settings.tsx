@@ -8,6 +8,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useTranslation } from 'react-i18next';
+import { useTierLimits } from '../hooks/useTierLimits';
 
 // ---------------------------------------------------------------------------
 // Schemas
@@ -51,6 +52,10 @@ export const Settings = () => {
     queryFn: () => fetchApi(`/organizations/${activeOrgId}/languages`, {}, getAccessTokenSilently),
     enabled: !!activeOrgId,
   });
+
+  const { limits, checkLanguageLimit, tier } = useTierLimits();
+  const extraLanguagesCount = languages?.filter((l: any) => !l.is_default)?.length || 0;
+  const isLanguageLimitReached = !checkLanguageLimit(extraLanguagesCount);
 
   const { register, handleSubmit, reset: resetSettings, formState: { errors, isDirty } } = useForm<SettingsForm>({
     resolver: zodResolver(settingsSchema),
@@ -283,18 +288,24 @@ export const Settings = () => {
                     <>
                       <li>1 Venue, 1 Menu per Venue</li>
                       <li>2 Categories, 10 Items per Category</li>
+                      <li>1 Extra Language (No Custom Domain)</li>
+                      <li>1 Organization</li>
                     </>
                   )}
                   {org?.subscription?.tier === 'Standard' && (
                     <>
                       <li>5 Venues, 2 Menus per Venue</li>
                       <li>30 Categories, 20 Items per Category</li>
+                      <li>3 Extra Languages, Custom Domain allowed</li>
+                      <li>2 Organizations</li>
                     </>
                   )}
                   {org?.subscription?.tier === 'Business' && (
                     <>
                       <li>5 Venues per Org, 5 Menus per Venue</li>
                       <li>30 Categories, 50 Items per Category</li>
+                      <li>10 Extra Languages, Custom Domain + Free Domain Registrar</li>
+                      <li>5 Organizations</li>
                     </>
                   )}
                   {org?.subscription?.tier === 'Enterprise' && (
@@ -309,6 +320,12 @@ export const Settings = () => {
 
       {/* Language Management */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        {isLanguageLimitReached && (
+          <div className="p-4 bg-amber-50 border-b border-amber-200 text-amber-900 text-xs flex justify-between items-center gap-2">
+            <span>You have reached the language limit ({extraLanguagesCount}/{limits.languages} extra languages) for your current plan ({tier}).</span>
+            <Link to="/billing" className="font-bold hover:underline text-amber-700">Upgrade Plan &rarr;</Link>
+          </div>
+        )}
         <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center">
           <div>
             <h2 className="text-base font-semibold text-gray-800">{t('languages')}</h2>
@@ -317,13 +334,23 @@ export const Settings = () => {
               <strong>{t('languages_info_2')}</strong> {t('languages_info_3')}
             </p>
           </div>
-          <button
-            onClick={() => setIsAddingLanguage(v => !v)}
-            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors flex-shrink-0 ml-4"
-          >
-            {isAddingLanguage ? <X size={14} /> : <Plus size={14} />}
-            {isAddingLanguage ? t('cancel') : t('add_language')}
-          </button>
+          {isLanguageLimitReached ? (
+            <Link
+              to="/billing"
+              className="flex items-center gap-1 px-3 py-1.5 text-sm bg-amber-600 hover:bg-amber-750 text-white rounded-md transition-colors flex-shrink-0 ml-4 font-semibold shadow-sm"
+            >
+              <Plus size={14} />
+              Upgrade to Add Language ({extraLanguagesCount}/{limits.languages})
+            </Link>
+          ) : (
+            <button
+              onClick={() => setIsAddingLanguage(v => !v)}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors flex-shrink-0 ml-4"
+            >
+              {isAddingLanguage ? <X size={14} /> : <Plus size={14} />}
+              {isAddingLanguage ? t('cancel') : t('add_language')}
+            </button>
+          )}
         </div>
 
         {isAddingLanguage && (

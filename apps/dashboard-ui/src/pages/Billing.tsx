@@ -27,6 +27,7 @@ export const Billing = () => {
   const { t } = useTranslation();
   const [loadingCheckout, setLoadingCheckout] = useState<string | null>(null);
   const [loadingPortal, setLoadingPortal] = useState(false);
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annually'>('monthly');
 
   const { data: orgs } = useQuery({
     queryKey: ['organizations'],
@@ -130,6 +131,23 @@ export const Billing = () => {
         </div>
       </div>
 
+      {/* Billing Cycle Toggle */}
+      <div className="flex justify-center items-center gap-3 bg-gray-50 p-3 rounded-xl border border-gray-100 max-w-sm mx-auto">
+        <span className={`text-sm font-semibold ${billingPeriod === 'monthly' ? 'text-indigo-600' : 'text-gray-500'}`}>Monthly</span>
+        <button
+          onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'annually' : 'monthly')}
+          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${billingPeriod === 'annually' ? 'bg-indigo-600' : 'bg-gray-200'}`}
+        >
+          <span
+            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${billingPeriod === 'annually' ? 'translate-x-5' : 'translate-x-0'}`}
+          />
+        </button>
+        <span className={`text-sm font-semibold flex items-center gap-1.5 ${billingPeriod === 'annually' ? 'text-indigo-600' : 'text-gray-500'}`}>
+          Annually
+          <span className="text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-bold">Save 15%+</span>
+        </span>
+      </div>
+
       {/* Pricing Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Free Plan */}
@@ -166,8 +184,12 @@ export const Billing = () => {
           <h3 className="text-lg font-semibold text-gray-900">Standard</h3>
           <p className="mt-2 text-sm text-gray-500 flex-1">Great for small businesses.</p>
           <div className="mt-4">
-            <span className="text-3xl font-extrabold text-gray-900">$29</span>
-            <span className="text-base font-medium text-gray-500">/mo</span>
+            <span className="text-3xl font-extrabold text-gray-900">
+              {billingPeriod === 'monthly' ? '$7' : '$70'}
+            </span>
+            <span className="text-base font-medium text-gray-500">
+              {billingPeriod === 'monthly' ? '/mo' : '/yr'}
+            </span>
           </div>
           <ul className="mt-6 space-y-4">
             <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">5 Venues</span></li>
@@ -202,8 +224,12 @@ export const Billing = () => {
           <h3 className="text-lg font-semibold text-gray-900">Business</h3>
           <p className="mt-2 text-sm text-gray-500 flex-1">For growing multi-location brands.</p>
           <div className="mt-4">
-            <span className="text-3xl font-extrabold text-gray-900">$99</span>
-            <span className="text-base font-medium text-gray-500">/mo</span>
+            <span className="text-3xl font-extrabold text-gray-900">
+              {billingPeriod === 'monthly' ? '$15' : '$150'}
+            </span>
+            <span className="text-base font-medium text-gray-500">
+              {billingPeriod === 'monthly' ? '/mo' : '/yr'}
+            </span>
           </div>
           <ul className="mt-6 space-y-4">
             <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">5 Venues</span></li>

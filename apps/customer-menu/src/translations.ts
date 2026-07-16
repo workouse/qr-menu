@@ -149,11 +149,11 @@ export const translations = {
     tr: "Yerel müşterilerinize ve uluslararası turistlere sorunsuz hizmet verin. Derlenmiş çevirileri anında çekerek diller arasında güzel bir geçiş düğmesiyle anında geçiş yapın."
   },
   feat4_title: {
-    en: "Ministry Compliance Ready",
+    en: "Custom Branding & Domains",
     tr: "Yasal Mevzuatlara Tam Uyum"
   },
   feat4_desc: {
-    en: "Fully compatible with the Ministry of Tarım ve Orman food transparency regulation (July 1, 2026) and Ministry of Trade price label etiquettes (January 1, 2026). Display calories, macros, allergens, and export CSV reports instantly.",
+    en: "Point your own custom domain, customize brand colors, fonts, and layout styles in seconds to establish trust with your guests.",
     tr: "Tarım ve Orman Bakanlığı'nın gıda şeffaflığı (1 Temmuz 2026) ve Ticaret Bakanlığı'nın fiyat etiketi (1 Ocak 2026) yönetmelikleriyle tam uyumludur. Kalori, besin değerleri, alerjenleri gösterin ve tek tıkla fiyat listesi CSV raporu alın."
   },
   compliance_badge: {
@@ -267,8 +267,16 @@ export const translations = {
     tr: "Test etmek için harika"
   },
   org_limit_1: {
-    en: "1 Org Included",
-    tr: "1 Organizasyon Dahil"
+    en: "1 Organization",
+    tr: "1 Organizasyon"
+  },
+  org_limit_2: {
+    en: "2 Organizations Included",
+    tr: "2 Organizasyon Dahil"
+  },
+  org_limit_5: {
+    en: "5 Organizations Included",
+    tr: "5 Organizasyon Dahil"
   },
   venue_limit_1: {
     en: "1 Venue Included",
@@ -289,6 +297,26 @@ export const translations = {
   item_limit_10: {
     en: "10 Items per category",
     tr: "Kategori Başına 10 Ürün"
+  },
+  lang_limit_1_extra: {
+    en: "1 Extra Language",
+    tr: "1 Ek Dil Desteği"
+  },
+  lang_limit_3_extra: {
+    en: "3 Extra Languages",
+    tr: "3 Ek Dil Desteği"
+  },
+  lang_limit_10_extra: {
+    en: "10 Extra Languages",
+    tr: "10 Ek Dil Desteği"
+  },
+  custom_domain_standard: {
+    en: "Custom Domain for Venues",
+    tr: "Mekanlara Özel Alan Adı"
+  },
+  custom_domain_business: {
+    en: "Custom Domain + Free Registrar",
+    tr: "Alan Adı + Ücretsiz Tescil (Cloudflare)"
   },
   standard: {
     en: "Standard",
@@ -323,8 +351,8 @@ export const translations = {
     tr: "Kategori Başına 20 Ürün"
   },
   custom_features: {
-    en: "Custom Themes & Domains",
-    tr: "Özel Temalar & Alan Adları"
+    en: "Custom Themes",
+    tr: "Özel Temalar"
   },
   best_value: {
     en: "Best Value",
@@ -337,10 +365,6 @@ export const translations = {
   business_tagline: {
     en: "For growing restaurant groups",
     tr: "Büyüyen restoran grupları için"
-  },
-  org_limit_3: {
-    en: "3 Orgs Included",
-    tr: "3 Organizasyon Dahil"
   },
   venue_limit_5_per_org: {
     en: "5 Venues per org",
@@ -471,20 +495,20 @@ export const translations = {
     tr: "Seçtiğiniz abonelik paketinde belirtilen kotalara göre QR Menu'yü kullanmanız için size sınırlı, münhasır olmayan, devredilemez bir lisans vermekteyiz:"
   },
   terms_license_free: {
-    en: "<strong>Free</strong>: 1 Organization, 1 Venue, 1 Menu, no staff access, 2 Categories, and 10 Items per category.",
-    tr: "<strong>Ücretsiz</strong>: 1 Organizasyon, 1 Mekan, 1 Menü, personel erişimi yok, 2 Kategori ve kategori başına 10 Ürün."
+    en: "<strong>Free</strong>: 1 Organization, 1 Venue, 1 Menu, no staff access, 2 Categories, 10 Items per category, 1 Extra Language, no Custom Domain.",
+    tr: "<strong>Ücretsiz</strong>: 1 Organizasyon, 1 Mekan, 1 Menü, personel erişimi yok, 2 Kategori, kategori başına 10 Ürün, 1 Ek Dil, Özel Alan Adı yok."
   },
   terms_license_standard: {
-    en: "<strong>Standard</strong>: 1 Organization, 5 Venues, 2 Menus per venue, 10 Staff members, 30 Categories, 20 Items per category, custom themes, custom domain.",
-    tr: "<strong>Standart</strong>: 1 Organizasyon, 5 Mekan, mekan başına 2 Menü, 10 Personel, 30 Kategori, kategori başına 20 Ürün, özel temalar ve özel alan adı."
+    en: "<strong>Standard</strong>: 2 Organizations, 5 Venues, 2 Menus per venue, 10 Staff members, 30 Categories, 20 Items per category, 3 Extra Languages, Custom Domain.",
+    tr: "<strong>Standart</strong>: 2 Organizasyon, 5 Mekan, mekan başına 2 Menü, 10 Personel, 30 Kategori, kategori başına 20 Ürün, 3 Ek Dil, Özel Alan Adı."
   },
   terms_license_business: {
-    en: "<strong>Business</strong>: 3 Organizations, 5 Venues per organization, 5 Menus per venue, 10 Staff per organization, 30 Categories, 50 Items per category, custom theme/domain, and call support.",
-    tr: "<strong>İşletme</strong>: 3 Organizasyon, organizasyon başına 5 Mekan, mekan başına 5 Menü, organizasyon başına 10 Personel, 30 Kategori, kategori başına 50 Ürün, özel tema/alan adı ve telefon desteği."
+    en: "<strong>Business</strong>: 5 Organizations, 5 Venues per organization, 5 Menus per venue, 10 Staff per organization, 30 Categories, 50 Items per category, 10 Extra Languages, Custom Domain + Free Registrar, and phone support.",
+    tr: "<strong>İşletme</strong>: 5 Organizasyon, organizasyon başına 5 Mekan, mekan başına 5 Menü, organizasyon başına 10 Personel, 30 Kategori, kategori başına 50 Ürün, 10 Ek Dil, Alan Adı + Ücretsiz Tescil, ve telefon desteği."
   },
   terms_license_enterprise: {
-    en: "<strong>Enterprise</strong>: Custom specifications and pricing designed for franchises and hotels.",
-    tr: "<strong>Kurumsal</strong>: Franchise şubeleri ve oteller için tasarlanmış özel kota ve fiyatlandırmalar."
+    en: "<strong>Enterprise</strong>: Unlimited specifications and pricing designed for franchises and hotels.",
+    tr: "<strong>Kurumsal</strong>: Franchise şubeleri ve oteller için tasarlanmış sınırsız kota ve özel fiyatlandırmalar."
   },
   terms_account_title: {
     en: "3. Account Responsibilities",
@@ -504,7 +528,11 @@ export const translations = {
   },
   faq_compliance_title: {
     en: "Legal Compliance & Regulations",
-    tr: "Yasal Mevzuat ve Uumluluk"
+    tr: "Yasal Mevzuat ve Uyumluluk"
+  },
+  price_suffix_annual: {
+    en: "/year",
+    tr: "/yıl"
   },
   faq1_q: {
     en: "What is the new calorie and allergen requirement for restaurants?",
@@ -529,5 +557,37 @@ export const translations = {
   faq3_a: {
     en: "Yes, QR Menu is 100% compliant with both the Price Label and Food Transparency regulations. These features are available for Turkey-located venues at no extra cost.",
     tr: "Evet, QR Menu hem Fiyat Etiketi hem de Gıda Şeffaflığı düzenlemelerine %100 tam uyumludur. Türkiye lokasyonlu mekanlarınız için bu özellikleri ek ücret ödemeden aktif edebilirsiniz."
+  },
+  faq_global_title: {
+    en: "Frequently Asked Questions",
+    tr: "Sıkça Sorulan Sorular"
+  },
+  faq_global_subtitle: {
+    en: "Everything you need to know about our high-performance digital menus.",
+    tr: "Yüksek performanslı dijital menülerimiz hakkında bilmeniz gereken her şey."
+  },
+  faq_g1_q: {
+    en: "How does QR Menu achieve zero database lag?",
+    tr: "QR Menu nasıl sıfır veritabanı gecikmesi sağlıyor?"
+  },
+  faq_g1_a: {
+    en: "When you save changes on your dashboard, our build pipeline pre-compiles your menu into an optimized static HTML/CSS bundle and pushes it to Cloudflare's edge network. When a customer scans your QR code, they load a pre-rendered static page from the nearest edge server in under 100ms, completely bypassing traditional database queries.",
+    tr: "Yönetim panelinizde değişiklik yaptığınızda, derleme altyapımız menünüzü optimize edilmiş statik bir HTML/CSS paketine dönüştürür ve Cloudflare'in uç ağına gönderir. Bir müşteri QR kodunuzu tarattığında, geleneksel veritabanı sorgularını tamamen atlayarak en yakın uç sunucudan 100 ms'nin altında önceden derlenmiş statik bir sayfayı yükler."
+  },
+  faq_g2_q: {
+    en: "Do I need a server, hosting, or database?",
+    tr: "Sunucu, hosting veya veritabanına ihtiyacım var mı?"
+  },
+  faq_g2_a: {
+    en: "No. QR Menu is fully serverless and hosted on our distributed global edge. You don't need to manage databases, pay for hosting, or worry about traffic spikes causing your menu to go offline.",
+    tr: "Hayır. QR Menu tamamen sunucusuzdur ve dağıtık küresel uç ağımızda barındırılır. Veritabanlarını yönetmenize, hosting ücreti ödemenize veya trafik yoğunluğunun menünüzün çevrimdışı olmasına yol açmasından endişelenmenize gerek yoktur."
+  },
+  faq_g3_q: {
+    en: "Can I use my own custom domain?",
+    tr: "Kendi özel alan adımı kullanabilir miyim?"
+  },
+  faq_g3_a: {
+    en: "Yes! With our Standard and Business plans, you can link your own domain or subdomain (e.g., menu.yourrestaurant.com) to present a professional, cohesive brand experience to your guests.",
+    tr: "Evet! Standart ve İşletme planlarımızla, misafirlerinize profesyonel ve bütünsel bir marka deneyimi sunmak için kendi alan adınızı veya alt alan adınızı (örn. menu.restoraniniz.com) bağlayabilirsiniz."
   }
 } as const;

@@ -15,6 +15,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         redirect_uri: window.location.origin,
         audience: audience,
       }}
+      cacheLocation="localstorage"
+      useRefreshTokens={true}
     >
       {children}
     </Auth0Provider>

@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchApi, uploadFile, UPLOADS_ORIGIN } from '../api/client';
 import { compressImageToWebP } from '../utils/image-compression';
@@ -11,6 +11,7 @@ import { z } from 'zod';
 import { ToggleSwitch } from '../components/ToggleSwitch';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { useTierLimits } from '../hooks/useTierLimits';
 
 const categorySchema = z.object({
   name: z.string().min(2, 'Category name is required'),
@@ -114,6 +115,10 @@ export const MenuBuilder = () => {
     queryFn: () => fetchApi(`/menus/${id}/categories`, {}, getAccessTokenSilently)
   });
 
+  const { limits, checkCategoryLimit, tier } = useTierLimits();
+  const categoryCount = categories?.length || 0;
+  const isCategoryLimitReached = !checkCategoryLimit(categoryCount);
+
   const createCategoryMutation = useMutation({
     mutationFn: (data: CategoryForm) => fetchApi(`/menus/${id}/categories`, {
       method: 'POST',
@@ -190,15 +195,37 @@ export const MenuBuilder = () => {
               Export Prices (CSV)
             </button>
           )}
-          <button
-            onClick={() => setIsAddingCategory(!isAddingCategory)}
-            className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors cursor-pointer"
-          >
-            {isAddingCategory ? <X size={18} className="mr-2" /> : <Plus size={18} className="mr-2" />}
-            {isAddingCategory ? 'Cancel' : 'Add Category'}
-          </button>
+          {isCategoryLimitReached ? (
+            <Link
+              to="/billing"
+              className="flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-md transition-colors cursor-pointer font-medium text-sm shadow-sm"
+            >
+              <Plus size={18} className="mr-2" />
+              Upgrade to Add Category ({categoryCount}/{limits.categories})
+            </Link>
+          ) : (
+            <button
+              onClick={() => setIsAddingCategory(!isAddingCategory)}
+              className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors cursor-pointer"
+            >
+              {isAddingCategory ? <X size={18} className="mr-2" /> : <Plus size={18} className="mr-2" />}
+              {isAddingCategory ? 'Cancel' : 'Add Category'}
+            </button>
+          )}
         </div>
       </div>
+
+      {isCategoryLimitReached && (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div>
+            <p className="font-bold">You've reached your category limit for this menu</p>
+            <p className="text-xs opacity-90">Your current plan ({tier}) allows up to {limits.categories} categories per menu. Upgrade to add more categories.</p>
+          </div>
+          <Link to="/billing" className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm">
+            Upgrade Now
+          </Link>
+        </div>
+      )}
 
       {/* Language switcher bar in admin panel */}
       {allOrgLanguages.length > 0 && (
@@ -476,6 +503,10 @@ const CategoryBlock = ({ category, menuId, allOrgLanguages, activeTabLanguage }:
     queryKey: ['items', category.id],
     queryFn: () => fetchApi(`/categories/${category.id}/items`, {}, getAccessTokenSilently)
   });
+
+  const { limits, checkItemLimit } = useTierLimits();
+  const itemCount = items?.length || 0;
+  const isItemLimitReached = !checkItemLimit(itemCount);
   const createItemMutation = useMutation({
     mutationFn: (data: ItemFormOutput) => fetchApi(`/categories/${category.id}/items`, {
       method: 'POST',
@@ -708,14 +739,32 @@ const CategoryBlock = ({ category, menuId, allOrgLanguages, activeTabLanguage }:
                 {activeTabLanguage !== 'all' ? null : showTranslations ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </button>
             )}
-            <button
-              onClick={() => setIsAddingItem(!isAddingItem)}
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-800 flex items-center ml-1"
-            >
-              {isAddingItem ? <X size={16} className="mr-1" /> : <Plus size={16} className="mr-1" />}
-              {isAddingItem ? 'Cancel' : 'Add Item'}
-            </button>
+            {isItemLimitReached ? (
+              <Link 
+                to="/billing"
+                className="text-sm font-medium text-amber-600 hover:text-amber-800 flex items-center ml-1"
+                title={`Item limit reached (${itemCount}/${limits.items})`}
+              >
+                <Plus size={16} className="mr-1" />
+                Upgrade to Add Item ({itemCount}/{limits.items})
+              </Link>
+            ) : (
+              <button
+                onClick={() => setIsAddingItem(!isAddingItem)}
+                className="text-sm font-medium text-indigo-600 hover:text-indigo-800 flex items-center ml-1"
+              >
+                {isAddingItem ? <X size={16} className="mr-1" /> : <Plus size={16} className="mr-1" />}
+                {isAddingItem ? 'Cancel' : 'Add Item'}
+              </button>
+            )}
           </div>
+        </div>
+      )}
+
+      {isItemLimitReached && !isEditingCategory && (
+        <div className="px-6 py-3 bg-amber-50 border-b border-amber-100 text-amber-900 text-xs flex justify-between items-center gap-2">
+          <span>You have reached the item limit ({itemCount}/{limits.items}) for this category. Upgrade your plan to add more items.</span>
+          <Link to="/billing" className="font-bold hover:underline text-amber-700">Upgrade Plan &rarr;</Link>
         </div>
       )}
 

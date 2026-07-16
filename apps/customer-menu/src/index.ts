@@ -210,18 +210,62 @@ app.get('/', async (c) => {
     : 'Generate high-performance, mobile-first QR menus. Zero database lag, instant edge updates, and beautiful dynamic designs.';
   const trText = (key: TranslationKey) => t(key, lang);
 
-  let faqSectionHtml = '';
-  if (lang === 'tr') {
-    faqSectionHtml = `
-    <!-- Compliance FAQ Section (Turkey Only) -->
-    <section id="compliance-faq" class="max-w-4xl mx-auto px-6 py-24 relative z-10 border-t border-white/5 text-left">
+  const faqSectionHtml = `
+    <!-- FAQ Section -->
+    <section id="faq" class="max-w-4xl mx-auto px-6 py-24 relative z-10 border-t border-white/5 text-left">
       <div class="text-center max-w-3xl mx-auto mb-16">
-        <span class="px-3 py-1 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-bold rounded-full uppercase tracking-wider">${trText('compliance_badge')}</span>
-        <h2 class="heading-font text-3xl sm:text-5xl font-black text-white mt-4">${trText('faq_compliance_title')}</h2>
+        <h2 class="heading-font text-3xl sm:text-5xl font-black text-white mt-4">${trText('faq_global_title')}</h2>
+        <p class="mt-4 text-gray-400">${trText('faq_global_subtitle')}</p>
       </div>
 
       <div class="space-y-4">
-        <!-- FAQ 1 -->
+        <!-- FAQ 1 (Global) -->
+        <div class="faq-item group bg-white/5 border border-white/5 rounded-2xl overflow-hidden transition-all duration-300">
+          <button class="w-full flex justify-between items-center p-6 text-left focus:outline-none" onclick="toggleFaq(this)">
+            <span class="heading-font font-bold text-white text-base sm:text-lg group-hover:text-brand-400 transition-colors">${trText('faq_g1_q')}</span>
+            <svg class="w-5 h-5 text-gray-400 transform transition-transform duration-300 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+            </svg>
+          </button>
+          <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300 ease-in-out">
+            <div class="p-6 pt-0 text-sm text-gray-400 border-t border-white/5 leading-relaxed bg-white/[0.01]">
+              ${trText('faq_g1_a')}
+            </div>
+          </div>
+        </div>
+
+        <!-- FAQ 2 (Global) -->
+        <div class="faq-item group bg-white/5 border border-white/5 rounded-2xl overflow-hidden transition-all duration-300">
+          <button class="w-full flex justify-between items-center p-6 text-left focus:outline-none" onclick="toggleFaq(this)">
+            <span class="heading-font font-bold text-white text-base sm:text-lg group-hover:text-brand-400 transition-colors">${trText('faq_g2_q')}</span>
+            <svg class="w-5 h-5 text-gray-400 transform transition-transform duration-300 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+            </svg>
+          </button>
+          <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300 ease-in-out">
+            <div class="p-6 pt-0 text-sm text-gray-400 border-t border-white/5 leading-relaxed bg-white/[0.01]">
+              ${trText('faq_g2_a')}
+            </div>
+          </div>
+        </div>
+
+        <!-- FAQ 3 (Global) -->
+        <div class="faq-item group bg-white/5 border border-white/5 rounded-2xl overflow-hidden transition-all duration-300">
+          <button class="w-full flex justify-between items-center p-6 text-left focus:outline-none" onclick="toggleFaq(this)">
+            <span class="heading-font font-bold text-white text-base sm:text-lg group-hover:text-brand-400 transition-colors">${trText('faq_g3_q')}</span>
+            <svg class="w-5 h-5 text-gray-400 transform transition-transform duration-300 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+            </svg>
+          </button>
+          <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300 ease-in-out">
+            <div class="p-6 pt-0 text-sm text-gray-400 border-t border-white/5 leading-relaxed bg-white/[0.01]">
+              ${trText('faq_g3_a')}
+            </div>
+          </div>
+        </div>
+
+        ${lang === 'tr' ? `
+        <!-- FAQ 4 (TR Compliance) -->
         <div class="faq-item group bg-white/5 border border-white/5 rounded-2xl overflow-hidden transition-all duration-300">
           <button class="w-full flex justify-between items-center p-6 text-left focus:outline-none" onclick="toggleFaq(this)">
             <span class="heading-font font-bold text-white text-base sm:text-lg group-hover:text-brand-400 transition-colors">${trText('faq1_q')}</span>
@@ -236,7 +280,7 @@ app.get('/', async (c) => {
           </div>
         </div>
 
-        <!-- FAQ 2 -->
+        <!-- FAQ 5 (TR Compliance) -->
         <div class="faq-item group bg-white/5 border border-white/5 rounded-2xl overflow-hidden transition-all duration-300">
           <button class="w-full flex justify-between items-center p-6 text-left focus:outline-none" onclick="toggleFaq(this)">
             <span class="heading-font font-bold text-white text-base sm:text-lg group-hover:text-brand-400 transition-colors">${trText('faq2_q')}</span>
@@ -251,7 +295,7 @@ app.get('/', async (c) => {
           </div>
         </div>
 
-        <!-- FAQ 3 -->
+        <!-- FAQ 6 (TR Compliance) -->
         <div class="faq-item group bg-white/5 border border-white/5 rounded-2xl overflow-hidden transition-all duration-300">
           <button class="w-full flex justify-between items-center p-6 text-left focus:outline-none" onclick="toggleFaq(this)">
             <span class="heading-font font-bold text-white text-base sm:text-lg group-hover:text-brand-400 transition-colors">${trText('faq3_q')}</span>
@@ -265,10 +309,10 @@ app.get('/', async (c) => {
             </div>
           </div>
         </div>
+        ` : ''}
       </div>
     </section>
-    `;
-  }
+  `;
 
   const html = `<!DOCTYPE html>
 <html lang="${lang}">
@@ -615,6 +659,15 @@ app.get('/', async (c) => {
         <p class="mt-4 text-gray-400">${trText('pricing_subtitle')}</p>
       </div>
 
+      <!-- Billing Cycle Toggle -->
+      <div class="flex justify-center items-center gap-3 mb-12">
+        <span class="text-sm font-semibold text-gray-400">Monthly</span>
+        <button id="billing-period-toggle" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-white/10 transition-colors duration-200 ease-in-out focus:outline-none" onclick="toggleBillingPeriod()">
+          <span id="billing-toggle-knob" class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out translate-x-0"></span>
+        </button>
+        <span class="text-sm font-semibold text-gray-400">Annually <span class="ml-1 text-xs text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded-full border border-brand-500/25">Save 15%+</span></span>
+      </div>
+
       <div class="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-7xl mx-auto">
         <!-- Free Tier -->
         <div class="p-6 rounded-2xl bg-white/5 border border-white/5 flex flex-col justify-between hover:border-white/10 transition-all duration-300 text-left">
@@ -649,9 +702,13 @@ app.get('/', async (c) => {
                 <svg class="w-4 h-4 text-brand-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
                 <span>${trText('item_limit_10')}</span>
               </li>
+              <li class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-brand-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                <span>${trText('lang_limit_1_extra')}</span>
+              </li>
             </ul>
           </div>
-          <a href="${dashboardUrl}?lang=${lang}" class="mt-8 w-full py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-center transition-colors text-xs">
+          <a href="${dashboardUrl}?lang=${lang}&plan=Free" class="mt-8 w-full py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-center transition-colors text-xs">
             ${trText('get_started')}
           </a>
         </div>
@@ -662,13 +719,13 @@ app.get('/', async (c) => {
             <h3 class="heading-font text-lg font-bold text-gray-300">${trText('standard')}</h3>
             <p class="text-xs text-gray-400 mt-1">${trText('standard_tagline')}</p>
             <div class="mt-6 flex items-baseline gap-1">
-              <span class="text-3xl font-black text-white">${lang === 'tr' ? '100 TRY' : '$5'}</span>
-              <span class="text-xs text-gray-400 font-semibold">${trText('price_suffix')}</span>
+              <span id="price-standard-val" class="text-3xl font-black text-white">$7</span>
+              <span id="price-standard-suffix" class="text-xs text-gray-400 font-semibold">${trText('price_suffix')}</span>
             </div>
             <ul class="mt-8 space-y-3.5 text-xs text-gray-300">
               <li class="flex items-center gap-2">
                 <svg class="w-4 h-4 text-brand-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                <span>${trText('org_limit_1')}</span>
+                <span>${trText('org_limit_2')}</span>
               </li>
               <li class="flex items-center gap-2">
                 <svg class="w-4 h-4 text-brand-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
@@ -692,11 +749,19 @@ app.get('/', async (c) => {
               </li>
               <li class="flex items-center gap-2">
                 <svg class="w-4 h-4 text-brand-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                <span>${trText('lang_limit_3_extra')}</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-brand-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                <span>${trText('custom_domain_standard')}</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-brand-500 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
                 <span>${trText('custom_features')}</span>
               </li>
             </ul>
           </div>
-          <a href="${dashboardUrl}?lang=${lang}" class="mt-8 w-full py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-center transition-colors text-xs">
+          <a id="btn-standard-link" href="${dashboardUrl}?lang=${lang}&plan=Standard" class="mt-8 w-full py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-center transition-colors text-xs">
             ${trText('start_free_trial')}
           </a>
         </div>
@@ -710,13 +775,13 @@ app.get('/', async (c) => {
             <h3 class="heading-font text-lg font-bold text-white">${trText('business')}</h3>
             <p class="text-xs text-brand-100 mt-1">${trText('business_tagline')}</p>
             <div class="mt-6 flex items-baseline gap-1">
-              <span class="text-3xl font-black text-white">${lang === 'tr' ? '500 TRY' : '$20'}</span>
-              <span class="text-xs text-brand-100 font-semibold">${trText('price_suffix')}</span>
+              <span id="price-business-val" class="text-3xl font-black text-white">$15</span>
+              <span id="price-business-suffix" class="text-xs text-brand-100 font-semibold">${trText('price_suffix')}</span>
             </div>
             <ul class="mt-8 space-y-3.5 text-xs text-brand-100 font-medium">
               <li class="flex items-center gap-2">
                 <svg class="w-4 h-4 text-purple-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                <span>${trText('org_limit_3')}</span>
+                <span>${trText('org_limit_5')}</span>
               </li>
               <li class="flex items-center gap-2">
                 <svg class="w-4 h-4 text-purple-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
@@ -740,6 +805,14 @@ app.get('/', async (c) => {
               </li>
               <li class="flex items-center gap-2">
                 <svg class="w-4 h-4 text-purple-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                <span>${trText('lang_limit_10_extra')}</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-purple-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                <span>${trText('custom_domain_business')}</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-purple-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
                 <span>${trText('custom_features')}</span>
               </li>
               <li class="flex items-center gap-2">
@@ -748,7 +821,7 @@ app.get('/', async (c) => {
               </li>
             </ul>
           </div>
-          <a href="${dashboardUrl}?lang=${lang}" class="mt-8 w-full py-3 px-4 rounded-xl bg-gradient-to-r from-brand-600 to-purple-500 hover:from-brand-500 hover:to-purple-400 text-white font-bold text-center transition-all duration-300 text-xs shadow-md">
+          <a id="btn-business-link" href="${dashboardUrl}?lang=${lang}&plan=Business" class="mt-8 w-full py-3 px-4 rounded-xl bg-gradient-to-r from-brand-600 to-purple-500 hover:from-brand-500 hover:to-purple-400 text-white font-bold text-center transition-all duration-300 text-xs shadow-md">
             ${trText('start_free_trial')}
           </a>
         </div>
@@ -823,6 +896,49 @@ app.get('/', async (c) => {
       } else {
         answer.style.maxHeight = '0px';
         svg.style.transform = 'rotate(0deg)';
+      }
+    }
+
+    var billingPeriod = 'monthly';
+    var suffixMonthly = "${trText('price_suffix')}";
+    var suffixAnnually = "${trText('price_suffix_annual')}";
+
+    function toggleBillingPeriod() {
+      var knob = document.getElementById('billing-toggle-knob');
+      var toggle = document.getElementById('billing-period-toggle');
+      var standardVal = document.getElementById('price-standard-val');
+      var standardSuffix = document.getElementById('price-standard-suffix');
+      var businessVal = document.getElementById('price-business-val');
+      var businessSuffix = document.getElementById('price-business-suffix');
+
+      if (billingPeriod === 'monthly') {
+        billingPeriod = 'annually';
+        if (knob) {
+          knob.classList.remove('translate-x-0');
+          knob.classList.add('translate-x-5');
+        }
+        if (toggle) {
+          toggle.classList.remove('bg-white/10');
+          toggle.classList.add('bg-brand-600');
+        }
+        if (standardVal) standardVal.textContent = '$70';
+        if (standardSuffix) standardSuffix.textContent = suffixAnnually;
+        if (businessVal) businessVal.textContent = '$150';
+        if (businessSuffix) businessSuffix.textContent = suffixAnnually;
+      } else {
+        billingPeriod = 'monthly';
+        if (knob) {
+          knob.classList.remove('translate-x-5');
+          knob.classList.add('translate-x-0');
+        }
+        if (toggle) {
+          toggle.classList.remove('bg-brand-600');
+          toggle.classList.add('bg-white/10');
+        }
+        if (standardVal) standardVal.textContent = '$7';
+        if (standardSuffix) standardSuffix.textContent = suffixMonthly;
+        if (businessVal) businessVal.textContent = '$15';
+        if (businessSuffix) businessSuffix.textContent = suffixMonthly;
       }
     }
 
@@ -1071,6 +1187,28 @@ app.get('/terms', async (c) => {
 });
 
 // Image Upload Router
+app.use('*', async (c, next) => {
+  const host = c.req.header('host') || '';
+  const mainDomain = 'qr-menu.workouse.com';
+
+  // If host is not our main domain, try to resolve it as a custom domain
+  if (host && !host.includes('localhost') && !host.includes('127.0.0.1') && !host.includes('.workers.dev') && host !== mainDomain) {
+    const lang = c.req.query('lang');
+    let html = null;
+    if (lang) {
+      html = await c.env.MENU_KV.get(`html:domain::${host.toLowerCase()}::${lang}`);
+    }
+    if (!html) {
+      html = await c.env.MENU_KV.get(`html:domain::${host.toLowerCase()}`);
+    }
+
+    if (html) {
+      return c.html(html);
+    }
+  }
+  await next();
+});
+
 app.get('/uploads/:id', async (c) => {
   const id = c.req.param('id');
   const object = await c.env.UPLOADS_BUCKET.get(id);

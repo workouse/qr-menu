@@ -18,6 +18,8 @@ type Bindings = {
   LEMON_SQUEEZY_API_KEY: string;
   LEMON_SQUEEZY_WEBHOOK_SECRET: string;
   LEMON_SQUEEZY_TEST_MODE: string;
+  LEMON_SQUEEZY_STANDARD_VARIANT_ID: string;
+  LEMON_SQUEEZY_BUSINESS_VARIANT_ID: string;
 };
 
 type Variables = {
@@ -309,7 +311,47 @@ app.onError((err, c) => {
 // Billing & Limits
 // ---------------------------------------------------------------------------
 
-async function checkTierLimits(c: any, orgId: string, type: 'venue' | 'menu' | 'category' | 'item', parentId?: string): Promise<boolean> {
+/**
+ * Maps a Lemon Squeezy product name to the internal tier string used across
+ * the app. Handles current naming convention ("QR Menu Standard", "QR Menu
+ * Bussiness") and is tolerant of future renames as long as the key word
+ * appears in the product name.
+ */
+function productNameToTier(productName: string): string {
+  const name = (productName ?? '').toLowerCase();
+  if (name.includes('business') || name.includes('bussiness')) return 'Business';
+  if (name.includes('standard')) return 'Standard';
+  if (name.includes('enterprise')) return 'Enterprise';
+  return productName; // fallback: store as-is so nothing is silently lost
+}
+
+async function checkTierLimits(c: any, orgId: string, type: 'venue' | 'menu' | 'category' | 'item' | 'organization' | 'language', parentId?: string): Promise<boolean> {
+  if (type === 'organization') {
+    // orgId is user ID here
+    const subRows = await c.env.DB.prepare(`
+      SELECT s.tier FROM subscriptions s
+      JOIN organizations o ON s.org_id = o.id
+      WHERE o.owner_id = ? AND (s.status = 'active' OR s.status = 'on_trial')
+    `).bind(orgId).all() as any;
+
+    let highestTier = 'Free';
+    if (subRows && subRows.results) {
+      for (const row of subRows.results) {
+        if (row.tier === 'Enterprise') { highestTier = 'Enterprise'; break; }
+        if (row.tier === 'Business') highestTier = 'Business';
+        else if (row.tier === 'Standard' && highestTier === 'Free') highestTier = 'Standard';
+      }
+    }
+
+    let orgLimit = 1;
+    if (highestTier === 'Standard') orgLimit = 2;
+    else if (highestTier === 'Business') orgLimit = 5;
+    else if (highestTier === 'Enterprise') return true;
+
+    const countRow = await c.env.DB.prepare('SELECT count(*) as c FROM organizations WHERE owner_id = ?').bind(orgId).first() as any;
+    return (countRow?.c || 0) < orgLimit;
+  }
+
   const sub = await c.env.DB.prepare('SELECT * FROM subscriptions WHERE org_id = ?').bind(orgId).first() as any;
   const tier = (sub?.status === 'active' || sub?.status === 'on_trial') ? (sub?.tier || 'Free') : 'Free';
 
@@ -334,6 +376,14 @@ async function checkTierLimits(c: any, orgId: string, type: 'venue' | 'menu' | '
   } else if (type === 'item' && parentId) {
     const countRow = await c.env.DB.prepare('SELECT count(*) as c FROM items WHERE category_id = ?').bind(parentId).first() as any;
     return countRow.c < limits.items;
+  } else if (type === 'language') {
+    let langLimit = 1;
+    if (tier === 'Standard') langLimit = 3;
+    else if (tier === 'Business') langLimit = 10;
+    else if (tier === 'Enterprise') return true;
+
+    const countRow = await c.env.DB.prepare('SELECT count(*) as c FROM org_languages WHERE org_id = ? AND is_default = 0').bind(orgId).first() as any;
+    return (countRow?.c || 0) < langLimit;
   }
   return true;
 }
@@ -378,7 +428,7 @@ app.post('/api/webhooks/lemonsqueezy', async (c) => {
 
   if (orgId && attributes) {
     const status = attributes.status;
-    const tier = attributes.product_name;
+    const tier = productNameToTier(attributes.product_name);
 
     if (eventName?.startsWith('subscription_')) {
       const id = `sub_${crypto.randomUUID()}`;
@@ -436,10 +486,15 @@ app.get('/api/me', async (c) => {
 app.post('/api/organizations', async (c) => {
   const userPayload = c.get('user') as UserPayload;
   const body = await c.req.json();
+
+  if (!(await checkTierLimits(c, userPayload.id, 'organization'))) {
+    return c.json({ error: 'Tier limit exceeded for organizations' }, 403);
+  }
+
   const orgId = `org_${crypto.randomUUID()}`;
 
-  await c.env.DB.prepare('INSERT INTO organizations (id, name) VALUES (?, ?)')
-    .bind(orgId, body.name)
+  await c.env.DB.prepare('INSERT INTO organizations (id, name, owner_id) VALUES (?, ?, ?)')
+    .bind(orgId, body.name, userPayload.id)
     .run();
 
   const emailPlaceholder = body.email || `${userPayload.id}@auth0.user`;
@@ -480,10 +535,12 @@ app.get('/api/organizations', async (c) => {
     return c.json(results);
   }
 
-  const user = await c.env.DB.prepare('SELECT org_id FROM users WHERE id = ?').bind(userPayload.id).first() as any;
-  if (!user || !user.org_id) return c.json([]);
+  const { results } = await c.env.DB.prepare(`
+    SELECT DISTINCT o.* FROM organizations o
+    LEFT JOIN users u ON u.org_id = o.id AND u.id = ?
+    WHERE o.owner_id = ? OR o.id = u.org_id
+  `).bind(userPayload.id, userPayload.id).all();
 
-  const { results } = await c.env.DB.prepare('SELECT * FROM organizations WHERE id = ?').bind(user.org_id).all();
   return c.json(results);
 });
 
@@ -535,6 +592,9 @@ app.get('/api/organizations/:org_id/languages', requireRole(['org_owner', 'org_s
 app.post('/api/organizations/:org_id/languages', requireRole(['org_owner', 'org_staff']), async (c) => {
   const orgId = c.req.param('org_id');
   if (!(await verifyOwnership(c, 'org', orgId))) return c.json({ error: 'Forbidden' }, 403);
+  if (!(await checkTierLimits(c, orgId, 'language'))) {
+    return c.json({ error: 'Tier limit exceeded for languages' }, 403);
+  }
   const body = await c.req.json();
 
   const id = `lang_${crypto.randomUUID()}`;
@@ -676,12 +736,9 @@ app.post('/api/organizations/:org_id/billing/checkout', requireRole('org_owner')
   const body = await c.req.json();
   const tier = body.tier;
 
-  let variantId;
-  if (tier === 'Business') {
-    variantId = '1911896';
-  } else {
-    variantId = '1911881'; // Default to Standard
-  }
+  const variantId = tier === 'Business'
+    ? c.env.LEMON_SQUEEZY_BUSINESS_VARIANT_ID
+    : c.env.LEMON_SQUEEZY_STANDARD_VARIANT_ID;
 
   // Fetch store ID dynamically
   const storesRes = await fetch('https://api.lemonsqueezy.com/v1/stores', {
@@ -769,18 +826,46 @@ app.post('/api/organizations/:org_id/billing/portal', requireRole('org_owner'), 
 // Venues
 // ---------------------------------------------------------------------------
 
+function slugify(text: string): string {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')           // Replace spaces with -
+    .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+    .replace(/\-\-+/g, '-')         // Replace multiple - with single -
+    .replace(/^-+/, '')             // Trim - from start
+    .replace(/-+$/, '');            // Trim - from end
+}
+
+async function generateUniqueSlug(db: D1Database, name: string): Promise<string> {
+  const baseSlug = slugify(name) || 'venue';
+  let slug = baseSlug;
+  let counter = 0;
+  while (true) {
+    const testSlug = counter === 0 ? baseSlug : `${baseSlug}-${counter}`;
+    const row = await db.prepare('SELECT id FROM venues WHERE slug = ?').bind(testSlug).first();
+    if (!row) {
+      return testSlug;
+    }
+    counter++;
+  }
+}
+
 app.post('/api/organizations/:org_id/venues', requireRole('org_owner'), async (c) => {
   const orgId = c.req.param('org_id');
   if (!(await verifyOwnership(c, 'org', orgId))) return c.json({ error: 'Forbidden' }, 403);
   if (!(await checkTierLimits(c, orgId, 'venue'))) return c.json({ error: 'Tier limit exceeded for venues' }, 403);
   const body = await c.req.json();
   const id = `venue_${crypto.randomUUID()}`;
+  const slug = await generateUniqueSlug(c.env.DB, body.name);
+  const verificationToken = crypto.randomUUID();
 
-  await c.env.DB.prepare('INSERT INTO venues (id, org_id, name, slug) VALUES (?, ?, ?, ?)')
-    .bind(id, orgId, body.name, body.slug)
+  await c.env.DB.prepare('INSERT INTO venues (id, org_id, name, slug, domain_verification_token) VALUES (?, ?, ?, ?, ?)')
+    .bind(id, orgId, body.name, slug, verificationToken)
     .run();
 
-  return c.json({ id, org_id: orgId, name: body.name, slug: body.slug }, 201);
+  return c.json({ id, org_id: orgId, name: body.name, slug, domain_verification_token: verificationToken }, 201);
 });
 
 app.get('/api/venues', requireRole(['org_owner', 'org_staff']), async (c) => {
@@ -832,6 +917,24 @@ app.patch('/api/venues/:venue_id', requireRole('org_owner'), async (c) => {
   const layoutStyle = typeof body.layout_style === 'string' ? body.layout_style : existing.layout_style;
   const countryCode = typeof body.country_code === 'string' ? body.country_code.trim().toUpperCase() : existing.country_code;
 
+  let customDomain = existing.custom_domain;
+  let customDomainVerified = existing.custom_domain_verified;
+  let domainVerificationToken = existing.domain_verification_token;
+
+  if (body.custom_domain !== undefined) {
+    const rawDomain = body.custom_domain ? String(body.custom_domain).trim().toLowerCase() : null;
+    if (rawDomain !== existing.custom_domain) {
+      const sub = await c.env.DB.prepare('SELECT * FROM subscriptions WHERE org_id = ?').bind(existing.org_id).first() as any;
+      const tier = (sub?.status === 'active' || sub?.status === 'on_trial') ? (sub?.tier || 'Free') : 'Free';
+      if (rawDomain && tier === 'Free') {
+        return c.json({ error: 'Tier limit exceeded: Custom domains are not allowed on the Free plan' }, 403);
+      }
+      customDomain = rawDomain;
+      customDomainVerified = 0;
+      domainVerificationToken = crypto.randomUUID();
+    }
+  }
+
   await c.env.DB.prepare(`
     UPDATE venues
     SET name = ?,
@@ -850,7 +953,10 @@ app.patch('/api/venues/:venue_id', requireRole('org_owner'), async (c) => {
         background_color = ?,
         theme_font = ?,
         layout_style = ?,
-        country_code = ?
+        country_code = ?,
+        custom_domain = ?,
+        custom_domain_verified = ?,
+        domain_verification_token = ?
     WHERE id = ?
   `).bind(
     name,
@@ -870,11 +976,59 @@ app.patch('/api/venues/:venue_id', requireRole('org_owner'), async (c) => {
     themeFont,
     layoutStyle,
     countryCode,
+    customDomain,
+    customDomainVerified,
+    domainVerificationToken,
     venueId
   ).run();
 
   const updated = await c.env.DB.prepare('SELECT * FROM venues WHERE id = ?').bind(venueId).first();
   return c.json(updated);
+});
+
+app.post('/api/venues/:venue_id/verify-domain', requireRole('org_owner'), async (c) => {
+  const venueId = c.req.param('venue_id');
+  if (!(await verifyOwnership(c, 'venue', venueId))) return c.json({ error: 'Forbidden' }, 403);
+
+  const venue = await c.env.DB.prepare('SELECT * FROM venues WHERE id = ?').bind(venueId).first() as any;
+  if (!venue) return c.json({ error: 'Venue not found' }, 404);
+  if (!venue.custom_domain) return c.json({ error: 'No custom domain configured' }, 400);
+
+  try {
+    const response = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(venue.custom_domain)}&type=TXT`, {
+      headers: { 'Accept': 'application/dns-json' }
+    });
+    if (!response.ok) {
+      return c.json({ success: false, error: 'Failed to query DNS' }, 500);
+    }
+    const data = await response.json() as any;
+    const records = data.Answer || [];
+    const expectedContent = `qr-menu-verification=${venue.domain_verification_token}`;
+
+    let verified = false;
+    for (const record of records) {
+      if (record.type === 16) { // TXT record
+        let txtData = record.data || '';
+        // Remove quotes if present
+        if (txtData.startsWith('"') && txtData.endsWith('"')) {
+          txtData = txtData.slice(1, -1);
+        }
+        if (txtData === expectedContent) {
+          verified = true;
+          break;
+        }
+      }
+    }
+
+    if (verified) {
+      await c.env.DB.prepare('UPDATE venues SET custom_domain_verified = 1 WHERE id = ?').bind(venueId).run();
+      return c.json({ success: true, verified: true });
+    }
+
+    return c.json({ success: false, verified: false, error: 'Verification TXT record not found' });
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500);
+  }
 });
 
 app.get('/api/venues/:venue_id/export-prices', requireRole(['org_owner', 'org_staff']), async (c) => {
@@ -1323,6 +1477,12 @@ ${jsonLdString}
     await c.env.MENU_KV.put(`html:venue::${venue.slug}::${lang.language_code}`, html);
     if (i === 0) {
       await c.env.MENU_KV.put(`html:venue::${venue.slug}`, html);
+    }
+    if (venue.custom_domain && venue.custom_domain_verified) {
+      await c.env.MENU_KV.put(`html:domain::${venue.custom_domain}::${lang.language_code}`, html);
+      if (i === 0) {
+        await c.env.MENU_KV.put(`html:domain::${venue.custom_domain}`, html);
+      }
     }
   }
 

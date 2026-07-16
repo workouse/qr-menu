@@ -19,6 +19,12 @@ import sql6 from '../../../packages/db/migrations/0006_multilanguage.sql?raw';
 import sql7 from '../../../packages/db/migrations/0007_theme_and_org_details.sql?raw';
 // @ts-ignore
 import sql8 from '../../../packages/db/migrations/0008_allergens_dietary.sql?raw';
+// @ts-ignore
+import sql9 from '../../../packages/db/migrations/0009_nutrition_info.sql?raw';
+// @ts-ignore
+import sql10 from '../../../packages/db/migrations/0010_seed_fixtures.sql?raw';
+// @ts-ignore
+import sql11 from '../../../packages/db/migrations/0011_venue_custom_domain.sql?raw';
 
 declare module 'cloudflare:test' {
   interface ProvidedEnv {
@@ -31,7 +37,7 @@ declare module 'cloudflare:test' {
 describe('Billing & Monetization (Lemon Squeezy)', () => {
   beforeAll(async () => {
     // Setup D1 Schema
-    const sqls = [sql1, sql2, sql3, sql4, sql5, sql6, sql7, sql8];
+    const sqls = [sql1, sql2, sql3, sql4, sql5, sql6, sql7, sql8, sql9, sql10, sql11];
     for (const sql of sqls) {
       const cleanSql = sql.replace(/--.*/g, '');
       const statements = cleanSql.split(';').map(s => s.trim()).filter(s => s.length > 0);
@@ -148,7 +154,7 @@ describe('Billing & Monetization (Lemon Squeezy)', () => {
           'Authorization': 'Bearer test_owner_billing',
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ name: 'Venue 1', slug: 'v1' })
+        body: JSON.stringify({ name: 'Venue 1' })
       }, env);
       expect(res.status).toBe(201);
 
@@ -159,7 +165,7 @@ describe('Billing & Monetization (Lemon Squeezy)', () => {
           'Authorization': 'Bearer test_owner_billing',
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ name: 'Venue 2', slug: 'v2' })
+        body: JSON.stringify({ name: 'Venue 2' })
       }, env);
       expect(res.status).toBe(403);
     });

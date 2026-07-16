@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Outlet, Link } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '../api/client';
-import { Menu, X, LayoutDashboard, MapPin, Settings, LogOut, ChevronDown, Globe, BookOpen, CreditCard } from 'lucide-react';
+import { Menu, X, LayoutDashboard, MapPin, Settings, LogOut, ChevronDown, Globe, BookOpen, CreditCard, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useTierLimits } from '../hooks/useTierLimits';
 
 export const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -21,6 +22,34 @@ export const DashboardLayout = () => {
 
   const activeOrgId = localStorage.getItem('active_org_id');
   const activeOrg = orgs?.find((o: any) => o.id === activeOrgId) || orgs?.[0];
+
+  const { limits, checkOrganizationLimit, tier } = useTierLimits();
+  const orgCount = orgs?.length || 0;
+  const isOrgLimitReached = !checkOrganizationLimit(orgCount);
+
+  const createOrgMutation = useMutation({
+    mutationFn: (name: string) => fetchApi('/organizations', {
+      method: 'POST',
+      body: JSON.stringify({ name })
+    }, getAccessTokenSilently),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['organizations'] });
+      localStorage.setItem('active_org_id', data.id);
+      queryClient.invalidateQueries();
+      setDropdownOpen(false);
+    }
+  });
+
+  const handleCreateOrgPrompt = () => {
+    if (isOrgLimitReached) {
+      alert(`Limit Reached: Your current plan (${tier}) allows up to ${limits.organizations} organizations. Please upgrade to create more.`);
+      return;
+    }
+    const name = prompt(t('enter_org_name', 'Enter new organization name:'));
+    if (name && name.trim()) {
+      createOrgMutation.mutate(name.trim());
+    }
+  };
 
   const handleOrgChange = (orgId: string) => {
     localStorage.setItem('active_org_id', orgId);
@@ -114,6 +143,15 @@ export const DashboardLayout = () => {
                         {org.name}
                       </button>
                     ))}
+                    <div className="border-t border-gray-150 my-1"></div>
+                    <button
+                      onClick={handleCreateOrgPrompt}
+                      disabled={createOrgMutation.isPending}
+                      className="w-full text-left px-4 py-2 text-sm text-indigo-600 hover:bg-indigo-50 font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    >
+                      <Plus size={14} />
+                      {t('new_organization', 'New Organization')}
+                    </button>
                   </div>
                 )}
               </div>

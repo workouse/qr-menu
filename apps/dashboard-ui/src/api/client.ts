@@ -32,6 +32,19 @@ export const fetchApi = async (
 
   if (!response.ok) {
     const errorBody = await response.text();
+    try {
+      const parsed = JSON.parse(errorBody);
+      if (parsed.error && parsed.error.toLowerCase().includes('tier limit exceeded')) {
+        window.dispatchEvent(
+          new CustomEvent('api-toast-error', {
+            detail: {
+              message: parsed.error,
+              type: 'tier_limit',
+            },
+          })
+        );
+      }
+    } catch (e) {}
     throw new Error(`API Error: ${response.status} - ${errorBody}`);
   }
 

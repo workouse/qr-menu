@@ -11,6 +11,7 @@ import { z } from 'zod';
 import { ToggleSwitch } from '../components/ToggleSwitch';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useTranslation } from 'react-i18next';
+import { useTierLimits } from '../hooks/useTierLimits';
 
 const menuSchema = z.object({
   name: z.string().min(2, 'Menu name must be at least 2 characters'),
@@ -41,6 +42,10 @@ export const MenusList = () => {
     queryKey: ['menus', id],
     queryFn: () => fetchApi(`/venues/${id}/menus`, {}, getAccessTokenSilently)
   });
+
+  const { limits, checkMenuLimit, tier } = useTierLimits();
+  const menuCount = menus?.length || 0;
+  const isLimitReached = !checkMenuLimit(menuCount);
 
   const { data: venue } = useQuery({
     queryKey: ['venue', id],
@@ -169,15 +174,37 @@ export const MenusList = () => {
             <Play size={18} className="mr-2" />
             {isCompiling ? t('compiling') : t('publish_to_edge')}
           </button>
-          <button 
-            onClick={() => setIsAddingMenu(!isAddingMenu)}
-            className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
-          >
-            {isAddingMenu ? <X size={18} className="mr-2" /> : <Plus size={18} className="mr-2" />}
-            {isAddingMenu ? t('cancel') : t('new_menu')}
-          </button>
+          {isLimitReached ? (
+            <Link 
+              to="/billing"
+              className="flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-md transition-colors font-medium text-sm shadow-sm cursor-pointer"
+            >
+              <Plus size={18} className="mr-2" />
+              Upgrade to Add Menu ({menuCount}/{limits.menus})
+            </Link>
+          ) : (
+            <button 
+              onClick={() => setIsAddingMenu(!isAddingMenu)}
+              className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+            >
+              {isAddingMenu ? <X size={18} className="mr-2" /> : <Plus size={18} className="mr-2" />}
+              {isAddingMenu ? t('cancel') : t('new_menu')}
+            </button>
+          )}
         </div>
       </div>
+
+      {isLimitReached && (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div>
+            <p className="font-bold">You've reached your menu limit for this venue</p>
+            <p className="text-xs opacity-90">Your current plan ({tier}) allows up to {limits.menus} {limits.menus === 1 ? 'menu' : 'menus'} per venue. Upgrade to add more menus.</p>
+          </div>
+          <Link to="/billing" className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm">
+            Upgrade Now
+          </Link>
+        </div>
+      )}
 
       {isAddingMenu && (
         <form onSubmit={handleSubmit(onSubmit)} className="mb-6 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row items-start md:items-end gap-4">

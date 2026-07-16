@@ -31,8 +31,8 @@ describe('Edge Delivery Worker', () => {
     expect(htmlText).toContain('Standard');
     expect(htmlText).toContain('Business');
     expect(htmlText).toContain('Enterprise');
-    expect(htmlText).toContain('$5');
-    expect(htmlText).toContain('$20');
+    expect(htmlText).toContain('$7');
+    expect(htmlText).toContain('$15');
     expect(htmlText).toContain('Theme Customizer');
     expect(htmlText).toContain('demo-menu-preview');
     expect(htmlText).toContain('/privacy');
@@ -68,21 +68,32 @@ describe('Edge Delivery Worker', () => {
     expect(htmlText).toContain('Enterprise');
   });
 
-  it('should render the compliance FAQ only on Turkish language', async () => {
+  it('should render the compliance items only on Turkish language, and general FAQ on both', async () => {
     const resEn = await app.request('/', {}, {
       ...env,
       DASHBOARD_URL: 'http://test-dashboard.local'
     });
     const htmlEn = await resEn.text();
-    expect(htmlEn).not.toContain('Yasal Mevzuat ve Uumluluk');
+    // General FAQ should be present
+    expect(htmlEn).toContain('Frequently Asked Questions');
+    expect(htmlEn).toContain('How does QR Menu achieve zero database lag?');
+    // Compliance features/FAQs should NOT be present
+    expect(htmlEn).not.toContain('Yasal Mevzuatlara Tam Uyum');
+    expect(htmlEn).not.toContain('Tarım ve Orman Bakanlığı');
+    expect(htmlEn).not.toContain('kalori ve alerjen zorunluluğu');
 
     const resTr = await app.request('/?lang=tr', {}, {
       ...env,
       DASHBOARD_URL: 'http://test-dashboard.local'
     });
     const htmlTr = await resTr.text();
-    expect(htmlTr).toContain('Yasal Mevzuat ve Uumluluk');
-    expect(htmlTr).toContain('Bakanlık Uyumlu');
+    // General FAQ should be present in Turkish
+    expect(htmlTr).toContain('Sıkça Sorulan Sorular');
+    expect(htmlTr).toContain('QR Menu nasıl sıfır veritabanı gecikmesi sağlıyor?');
+    // Compliance features/FAQs SHOULD be present in Turkish
+    expect(htmlTr).toContain('Yasal Mevzuatlara Tam Uyum');
+    expect(htmlTr).toContain('Tarım ve Orman Bakanlığı');
+    expect(htmlTr).toContain('kalori ve alerjen zorunluluğu');
   });
 
   it('should return 404 HTML if menu not found in KV', async () => {

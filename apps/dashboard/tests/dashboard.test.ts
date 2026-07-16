@@ -20,6 +20,10 @@ import sql7 from '../../../packages/db/migrations/0007_theme_and_org_details.sql
 import sql8 from '../../../packages/db/migrations/0008_allergens_dietary.sql?raw';
 // @ts-ignore
 import sql9 from '../../../packages/db/migrations/0009_nutrition_info.sql?raw';
+// @ts-ignore
+import sql10 from '../../../packages/db/migrations/0010_seed_fixtures.sql?raw';
+// @ts-ignore
+import sql11 from '../../../packages/db/migrations/0011_venue_custom_domain.sql?raw';
 
 declare module 'cloudflare:test' {
   interface ProvidedEnv {
@@ -30,7 +34,7 @@ declare module 'cloudflare:test' {
 describe('Dashboard API Integration', () => {
   beforeAll(async () => {
     // Setup D1 Schema with all migrations
-    const sqls = [sql1, sql2, sql3, sql4, sql5, sql6, sql7, sql8, sql9];
+    const sqls = [sql1, sql2, sql3, sql4, sql5, sql6, sql7, sql8, sql9, sql10, sql11];
     for (const sql of sqls) {
       const cleanSql = sql.replace(/--.*/g, '');
       const statements = cleanSql.split(';').map(s => s.trim()).filter(s => s.length > 0);
@@ -72,6 +76,8 @@ describe('Dashboard API Integration', () => {
     const orgId = 'org_test_123';
     await env.DB.prepare('INSERT INTO organizations (id, name) VALUES (?, ?)').bind(orgId, 'My Org').run();
     await env.DB.prepare('INSERT INTO users (id, org_id, email, role) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET org_id=excluded.org_id').bind('test_owner', orgId, 'test@auth.com', 'org_owner').run();
+    // Upgrade subscription to standard so we can create more than 1 venue for uniqueness testing
+    await env.DB.prepare('INSERT INTO subscriptions (id, org_id, tier, status) VALUES (?, ?, ?, ?)').bind('sub_test_123', orgId, 'Standard', 'active').run();
 
     const res = await app.request(`/api/organizations/${orgId}/venues`, {
       method: 'POST',
@@ -79,12 +85,27 @@ describe('Dashboard API Integration', () => {
         'Authorization': 'Bearer test_owner',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ name: 'My Venue', slug: 'my-venue' })
+      body: JSON.stringify({ name: 'My Venue' })
     }, env);
     
     expect(res.status).toBe(201);
     const data = await res.json() as any;
     expect(data.name).toBe('My Venue');
+    expect(data.slug).toBe('my-venue');
+    expect(data.domain_verification_token).toBeDefined();
+
+    // Check uniqueness generation
+    const resDuplicate = await app.request(`/api/organizations/${orgId}/venues`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer test_owner',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name: 'My Venue' })
+    }, env);
+    expect(resDuplicate.status).toBe(201);
+    const dataDuplicate = await resDuplicate.json() as any;
+    expect(dataDuplicate.slug).toBe('my-venue-1');
   });
 
   it('should allow full creation of menu, category, and items', async () => {

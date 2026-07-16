@@ -18,6 +18,12 @@ import { useEffect } from 'react';
 function App() {
   useEffect(() => {
     const url = new URL(window.location.href);
+    const plan = url.searchParams.get('plan');
+    if (plan) {
+      localStorage.setItem('selected_plan', plan);
+      url.searchParams.delete('plan');
+      window.history.replaceState({}, '', url.toString());
+    }
     if (url.searchParams.has('lang')) {
       url.searchParams.delete('lang');
       window.history.replaceState({}, '', url.toString());

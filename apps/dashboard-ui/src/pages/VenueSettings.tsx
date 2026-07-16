@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTierLimits } from '../hooks/useTierLimits';
 import { fetchApi, uploadFile } from '../api/client';
 import { compressImageToWebP } from '../utils/image-compression';
 import { useAuth0 } from '@auth0/auth0-react';
@@ -168,6 +169,7 @@ const venueSchema = z.object({
   theme_font: z.string(),
   layout_style: z.string(),
   country_code: z.string().min(2, 'Country must be selected').max(3),
+  custom_domain: z.string().or(z.literal('')).nullable().optional(),
 });
 type VenueForm = z.infer<typeof venueSchema>;
 
@@ -178,9 +180,11 @@ export const VenueSettings = () => {
   const queryClient = useQueryClient();
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'branding' | 'contact'>('branding');
+  const [activeTab, setActiveTab] = useState<'branding' | 'contact' | 'domain'>('branding');
   const [isAdvancedMode, setIsAdvancedMode] = useState(false);
   const { t } = useTranslation();
+  const { isCustomDomainAllowed } = useTierLimits();
+  const domainAllowed = isCustomDomainAllowed();
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors, isDirty } } = useForm<VenueForm>({
     resolver: zodResolver(venueSchema),
@@ -220,10 +224,31 @@ export const VenueSettings = () => {
         theme_font: venue.theme_font ?? 'sans',
         layout_style: venue.layout_style ?? 'list',
         country_code: venue.country_code ?? 'TR',
+        custom_domain: venue.custom_domain ?? '',
       });
       setIsAdvancedMode(venue.theme_id === 'custom');
     }
   }, [venue, reset]);
+
+  const verifyDomainMutation = useMutation({
+    mutationFn: () =>
+      fetchApi(`/venues/${id}/verify-domain`, {
+        method: 'POST',
+      }, getAccessTokenSilently),
+    onSuccess: (data: any) => {
+      if (data.verified) {
+        queryClient.invalidateQueries({ queryKey: ['venue', id] });
+        setFeedback({ type: 'success', message: 'Domain verified successfully!' });
+      } else {
+        setFeedback({ type: 'error', message: data.error || 'Verification failed. Please check your TXT records.' });
+      }
+      setTimeout(() => setFeedback(null), 5000);
+    },
+    onError: (err: any) => {
+      setFeedback({ type: 'error', message: err.message || 'Verification request failed.' });
+      setTimeout(() => setFeedback(null), 5000);
+    }
+  });
 
   const updateMutation = useMutation({
     mutationFn: (data: VenueForm) =>
@@ -329,6 +354,7 @@ export const VenueSettings = () => {
       <div className="border-b border-gray-200">
         <nav className="flex gap-6" aria-label="Tabs">
           <button
+            type="button"
             onClick={() => setActiveTab('branding')}
             className={`pb-4 px-1 text-sm font-semibold border-b-2 transition-all cursor-pointer ${
               activeTab === 'branding'
@@ -342,6 +368,7 @@ export const VenueSettings = () => {
             </span>
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('contact')}
             className={`pb-4 px-1 text-sm font-semibold border-b-2 transition-all cursor-pointer ${
               activeTab === 'contact'
@@ -352,6 +379,20 @@ export const VenueSettings = () => {
             <span className="flex items-center gap-2">
               <Phone size={16} />
               {t('contact_socials')}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('domain')}
+            className={`pb-4 px-1 text-sm font-semibold border-b-2 transition-all cursor-pointer ${
+              activeTab === 'domain'
+                ? 'border-indigo-600 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <GlobeIcon size={16} />
+              Domain Setup
             </span>
           </button>
         </nav>
@@ -780,6 +821,94 @@ export const VenueSettings = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'domain' && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-6">
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">Custom Domain Configuration</h2>
+              <p className="text-sm text-gray-500 mt-1">Connect your own domain or subdomain to your digital menu.</p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Custom Domain / Subdomain</label>
+                <input
+                  {...register('custom_domain')}
+                  disabled={!domainAllowed}
+                  className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-150 disabled:text-gray-400 disabled:cursor-not-allowed"
+                  placeholder={domainAllowed ? "menu.myrestaurant.com" : "Upgrade plan to use custom domains"}
+                />
+                {errors.custom_domain && <p className="mt-1 text-xs text-red-600">{errors.custom_domain.message}</p>}
+              </div>
+
+              {!domainAllowed && (
+                <div className="border border-amber-250 rounded-xl p-4 bg-amber-50 text-amber-900 text-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 max-w-2xl shadow-sm">
+                  <div>
+                    <p className="font-bold">Custom domains are not supported on your plan</p>
+                    <p className="opacity-90">Upgrade to a Standard or Business plan to publish your menus under your own custom domain name.</p>
+                  </div>
+                  <Link to="/billing" className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg transition-colors shadow-sm whitespace-nowrap">
+                    Upgrade Now
+                  </Link>
+                </div>
+              )}
+
+              {venue?.custom_domain && (
+                <div className="border border-gray-200 rounded-xl p-4 bg-gray-50 space-y-4 max-w-2xl">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-gray-700">Verification Status:</span>
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                      venue.custom_domain_verified 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {venue.custom_domain_verified ? 'Verified' : 'Pending Verification'}
+                    </span>
+                  </div>
+
+                  {!venue.custom_domain_verified && (
+                    <div className="space-y-3">
+                      <div className="text-xs text-gray-600 space-y-2">
+                        <p className="font-bold">Follow these steps to connect your domain:</p>
+                        <ol className="list-decimal pl-4 space-y-1">
+                          <li>
+                            Go to your DNS provider (e.g. Cloudflare, GoDaddy, Namecheap).
+                          </li>
+                          <li>
+                            Add a <strong>TXT record</strong> to verify ownership:
+                            <div className="bg-gray-200 p-2 rounded font-mono text-[11px] mt-1 break-all">
+                              Host: @ (or your subdomain)<br />
+                              Value: qr-menu-verification={venue.domain_verification_token}
+                            </div>
+                          </li>
+                          <li>
+                            Add a <strong>CNAME record</strong> to point traffic to us:
+                            <div className="bg-gray-200 p-2 rounded font-mono text-[11px] mt-1">
+                              Host: @ (or your subdomain)<br />
+                              Value: qr-menu.workouse.com
+                            </div>
+                          </li>
+                        </ol>
+                        <p className="text-[11px] text-gray-500">
+                          For detailed guidelines, visit our <a href="https://docs.qr-menu.workouse.com/user/venue/custom-domain" target="_blank" rel="noopener noreferrer" className="text-indigo-600 underline">Custom Domain Setup Guide</a>.
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => verifyDomainMutation.mutate()}
+                        disabled={verifyDomainMutation.isPending}
+                        className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow disabled:opacity-50"
+                      >
+                        {verifyDomainMutation.isPending ? 'Verifying...' : 'Verify DNS Records'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}

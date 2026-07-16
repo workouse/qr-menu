@@ -10,7 +10,6 @@ import { useTranslation } from 'react-i18next';
 
 const venueSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
-  slug: z.string().min(2, 'Slug must be at least 2 characters').regex(/^[a-z0-9-]+$/, 'Lowercase letters, numbers, and hyphens only'),
 });
 
 type VenueForm = z.infer<typeof venueSchema>;
@@ -56,21 +55,6 @@ export const VenueCreate = () => {
             placeholder={t('venue_name_placeholder')}
           />
           {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
-        </div>
-
-        <div className="mb-8">
-          <label className="block text-sm font-medium text-gray-700 mb-2">{t('url_slug')}</label>
-          <div className="flex rounded-md shadow-sm">
-            <span className="inline-flex items-center px-4 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">
-              qr-menu.com/
-            </span>
-            <input 
-              {...register('slug')}
-              className="flex-1 min-w-0 block w-full px-4 py-2 rounded-none rounded-r-md border border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder={t('slug_placeholder')}
-            />
-          </div>
-          {errors.slug && <p className="mt-1 text-sm text-red-600">{errors.slug.message}</p>}
         </div>
 
         <div className="flex justify-end space-x-3">

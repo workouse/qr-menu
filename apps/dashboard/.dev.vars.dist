@@ -9,3 +9,6 @@ LEMON_SQUEEZY_API_KEY=your_lemon_squeezy_api_key
 LEMON_SQUEEZY_WEBHOOK_SECRET=your_lemon_squeezy_webhook_secret
 # Set to 'true' for local/test mode, 'false' for production live payments
 LEMON_SQUEEZY_TEST_MODE=true
+# Lemon Squeezy variant IDs (monthly) per plan — find in LS dashboard under Products > Variants
+LEMON_SQUEEZY_STANDARD_VARIANT_ID=1916979
+LEMON_SQUEEZY_BUSINESS_VARIANT_ID=1911899
