@@ -148,6 +148,18 @@ export const translations = {
     en: "Serve local regulars and international tourists seamlessly. Switch languages instantly with a beautiful toggle, pulling compiled translations on the fly.",
     tr: "Yerel müşterilerinize ve uluslararası turistlere sorunsuz hizmet verin. Derlenmiş çevirileri anında çekerek diller arasında güzel bir geçiş düğmesiyle anında geçiş yapın."
   },
+  feat4_title: {
+    en: "Ministry Compliance Ready",
+    tr: "Yasal Mevzuatlara Tam Uyum"
+  },
+  feat4_desc: {
+    en: "Fully compatible with the Ministry of Tarım ve Orman food transparency regulation (July 1, 2026) and Ministry of Trade price label etiquettes (January 1, 2026). Display calories, macros, allergens, and export CSV reports instantly.",
+    tr: "Tarım ve Orman Bakanlığı'nın gıda şeffaflığı (1 Temmuz 2026) ve Ticaret Bakanlığı'nın fiyat etiketi (1 Ocak 2026) yönetmelikleriyle tam uyumludur. Kalori, besin değerleri, alerjenleri gösterin ve tek tıkla fiyat listesi CSV raporu alın."
+  },
+  compliance_badge: {
+    en: "Bakanlık Uyumlu",
+    tr: "Bakanlık Uyumlu"
+  },
 
   // Interactive Demo Section
   demo_title: {
@@ -489,5 +501,33 @@ export const translations = {
   terms_liability_desc: {
     en: "In no event shall QR Menu or its developers (WORKOUSE) be liable for any damages arising out of the use or inability to use the services, even if notified orally or in writing of the possibility of such damage.",
     tr: "QR Menu veya geliştiricileri (WORKOUSE), hizmetlerin kullanımından veya kullanılamamasından kaynaklanan hiçbir zarardan, bu tür zararların olasılığı sözlü veya yazılı olarak bildirilmiş olsa dahi, hiçbir koşulda sorumlu tutulamaz."
+  },
+  faq_compliance_title: {
+    en: "Legal Compliance & Regulations",
+    tr: "Yasal Mevzuat ve Uumluluk"
+  },
+  faq1_q: {
+    en: "What is the new calorie and allergen requirement for restaurants?",
+    tr: "Restoran ve kafelerdeki yeni kalori ve alerjen zorunluluğu nedir?"
+  },
+  faq1_a: {
+    en: "Under the new food transparency regulation from the Ministry of Agriculture and Forestry, menus must display calories, nutrition facts (protein, carbs, fat), and allergens. Our platform supports these fields natively.",
+    tr: "Tarım ve Orman Bakanlığı'nın gıda şeffaflığı düzenlemesi uyarınca, menülerde yemeklerin kalori, besin değerleri (protein, karbonhidrat, yağ) ve alerjen bilgilerinin yer alması zorunludur. Platformumuz bu alanları yerel olarak destekler."
+  },
+  faq2_q: {
+    en: "What is the Price Label regulation that went into effect?",
+    tr: "Yürürlüğe giren Fiyat Etiketi yönetmeliği nedir?"
+  },
+  faq2_a: {
+    en: "According to the Ministry of Trade, restaurants must display price listings at entrances and tables (via QR codes). QR Menu enables instant price updates and single-click CSV export for audits.",
+    tr: "Ticaret Bakanlığı'na göre, restoranlarda girişlerde ve masalarda (QR kodlar aracılığıyla) fiyat listelerinin bulunması zorunludur. QR Menu, anlık güncellemeler ve denetimler için tek tıkla CSV fiyat listesi raporu alınmasını sağlar."
+  },
+  faq3_q: {
+    en: "Is QR Menu fully compliant with these regulations?",
+    tr: "QR Menu bu yasal düzenlemelere tam uyumlu mudur?"
+  },
+  faq3_a: {
+    en: "Yes, QR Menu is 100% compliant with both the Price Label and Food Transparency regulations. These features are available for Turkey-located venues at no extra cost.",
+    tr: "Evet, QR Menu hem Fiyat Etiketi hem de Gıda Şeffaflığı düzenlemelerine %100 tam uyumludur. Türkiye lokasyonlu mekanlarınız için bu özellikleri ek ücret ödemeden aktif edebilirsiniz."
   }
 } as const;

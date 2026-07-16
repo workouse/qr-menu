@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchApi, uploadFile, UPLOADS_ORIGIN } from '../api/client';
 import { compressImageToWebP } from '../utils/image-compression';
 import { useAuth0 } from '@auth0/auth0-react';
-import { Plus, X, Languages, ChevronDown, ChevronUp, Pencil, Trash2 } from 'lucide-react';
+import { Plus, X, Languages, ChevronDown, ChevronUp, Pencil, Trash2, Download } from 'lucide-react';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,14 +17,13 @@ const categorySchema = z.object({
   cover_image_url: z.string().optional().or(z.literal('')),
 });
 type CategoryForm = z.infer<typeof categorySchema>;
-
 const itemSchema = z.object({
   name: z.string().min(2, 'Item name is required'),
   description: z.string().optional(),
   price: z.union([z.string(), z.number()])
     .transform(val => {
       if (typeof val === 'number') return val;
-      const parsed = parseFloat(val.replace(',', '.'));
+      const parsed = parseFloat(String(val).replace(',', '.'));
       return isNaN(parsed) ? 0 : parsed;
     })
     .refine(val => val >= 0, 'Price must be 0 or more'),
@@ -32,7 +31,37 @@ const itemSchema = z.object({
   is_vegan: z.boolean().optional().default(false),
   is_gluten_free: z.boolean().optional().default(false),
   allergens: z.string().optional().default(''),
+  calories: z.union([z.string(), z.number()])
+    .transform(val => {
+      if (val === '' || val === null || val === undefined) return undefined;
+      const p = parseInt(String(val));
+      return isNaN(p) ? undefined : p;
+    })
+    .optional(),
+  protein: z.union([z.string(), z.number()])
+    .transform(val => {
+      if (val === '' || val === null || val === undefined) return undefined;
+      const p = parseFloat(String(val).replace(',', '.'));
+      return isNaN(p) ? undefined : p;
+    })
+    .optional(),
+  carbohydrates: z.union([z.string(), z.number()])
+    .transform(val => {
+      if (val === '' || val === null || val === undefined) return undefined;
+      const p = parseFloat(String(val).replace(',', '.'));
+      return isNaN(p) ? undefined : p;
+    })
+    .optional(),
+  fat: z.union([z.string(), z.number()])
+    .transform(val => {
+      if (val === '' || val === null || val === undefined) return undefined;
+      const p = parseFloat(String(val).replace(',', '.'));
+      return isNaN(p) ? undefined : p;
+    })
+    .optional(),
+  ingredients: z.string().optional().default(''),
 });
+
 type ItemFormInput = z.input<typeof itemSchema>;
 type ItemFormOutput = z.output<typeof itemSchema>;
 
@@ -112,6 +141,29 @@ export const MenuBuilder = () => {
     }
   };
 
+  const handleExportPrices = async () => {
+    if (!venue?.id) return;
+    try {
+      const token = await getAccessTokenSilently();
+      const res = await fetch(`/api/venues/${venue.id}/export-prices`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `fiyat-listesi-${venue.slug}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (err: any) {
+      alert('Failed to export price list: ' + err.message);
+    }
+  };
+
   const breadcrumbItems = [
     { label: 'Venues', to: '/venues' },
     ...(venue ? [{ label: venue.name, to: `/venues/${venue.id}/menus` }] : []),
@@ -128,13 +180,24 @@ export const MenuBuilder = () => {
           <h1 className="text-2xl font-bold text-gray-900">Menu Builder</h1>
           {menu?.name && <p className="text-sm text-gray-500 mt-1">Managing: {menu.name}</p>}
         </div>
-        <button
-          onClick={() => setIsAddingCategory(!isAddingCategory)}
-          className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors self-start md:self-auto"
-        >
-          {isAddingCategory ? <X size={18} className="mr-2" /> : <Plus size={18} className="mr-2" />}
-          {isAddingCategory ? 'Cancel' : 'Add Category'}
-        </button>
+        <div className="flex items-center gap-2 self-start md:self-auto">
+          {venue?.country_code === 'TR' && (
+            <button
+              onClick={handleExportPrices}
+              className="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors cursor-pointer"
+            >
+              <Download size={18} className="mr-2" />
+              Export Prices (CSV)
+            </button>
+          )}
+          <button
+            onClick={() => setIsAddingCategory(!isAddingCategory)}
+            className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors cursor-pointer"
+          >
+            {isAddingCategory ? <X size={18} className="mr-2" /> : <Plus size={18} className="mr-2" />}
+            {isAddingCategory ? 'Cancel' : 'Add Category'}
+          </button>
+        </div>
       </div>
 
       {/* Language switcher bar in admin panel */}
@@ -242,7 +305,6 @@ interface TranslationPanelProps {
   getAccessTokenSilently: () => Promise<string>;
   activeTabLanguage: string;
 }
-
 const TranslationPanel = ({ type, entityId, languages, getAccessTokenSilently, activeTabLanguage }: TranslationPanelProps) => {
   const endpoint = type === 'category'
     ? `/categories/${entityId}/translations`
@@ -254,7 +316,7 @@ const TranslationPanel = ({ type, entityId, languages, getAccessTokenSilently, a
     enabled: languages.length > 0,
   });
 
-  const [values, setValues] = useState<Record<string, { name: string; description: string }>>({});
+  const [values, setValues] = useState<Record<string, { name: string; description: string; ingredients: string }>>({});
   const valuesRef = useRef(values);
 
   useEffect(() => {
@@ -263,12 +325,13 @@ const TranslationPanel = ({ type, entityId, languages, getAccessTokenSilently, a
 
   useEffect(() => {
     if (translations) {
-      const newValues: Record<string, { name: string; description: string }> = {};
+      const newValues: Record<string, { name: string; description: string; ingredients: string }> = {};
       languages.forEach((lang) => {
         const tr = translations.find((t: any) => t.language_code === lang.language_code);
         newValues[lang.language_code] = {
           name: tr?.name ?? '',
           description: tr?.description ?? '',
+          ingredients: tr?.ingredients ?? '',
         };
       });
       setValues(newValues);
@@ -285,7 +348,7 @@ const TranslationPanel = ({ type, entityId, languages, getAccessTokenSilently, a
       
       const body = type === 'category'
         ? { name: currentVal.name }
-        : { name: currentVal.name, description: currentVal.description };
+        : { name: currentVal.name, description: currentVal.description, ingredients: currentVal.ingredients };
 
       try {
         await fetchApi(`${endpoint}/${langCode}`, {
@@ -298,7 +361,7 @@ const TranslationPanel = ({ type, entityId, languages, getAccessTokenSilently, a
     }, 600);
   }, [endpoint, type, getAccessTokenSilently]);
 
-  const handleChange = (langCode: string, field: 'name' | 'description', val: string) => {
+  const handleChange = (langCode: string, field: 'name' | 'description' | 'ingredients', val: string) => {
     setValues((prev) => ({
       ...prev,
       [langCode]: {
@@ -319,7 +382,7 @@ const TranslationPanel = ({ type, entityId, languages, getAccessTokenSilently, a
   return (
     <div className="space-y-4">
       {filteredLanguages.map((lang: any) => {
-        const val = values[lang.language_code] || { name: '', description: '' };
+        const val = values[lang.language_code] || { name: '', description: '', ingredients: '' };
         return (
           <div key={lang.language_code} className="grid grid-cols-1 md:grid-cols-2 gap-3 border-l-2 border-indigo-200 pl-3 py-1">
             <div>
@@ -334,17 +397,31 @@ const TranslationPanel = ({ type, entityId, languages, getAccessTokenSilently, a
               />
             </div>
             {type === 'item' && (
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">
-                  {lang.language_name} ({lang.language_code.toUpperCase()}) — Description
-                </label>
-                <input
-                  value={val.description}
-                  onChange={e => handleChange(lang.language_code, 'description', e.target.value)}
-                  placeholder="Translation…"
-                  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                />
-              </div>
+              <>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    {lang.language_name} ({lang.language_code.toUpperCase()}) — Description
+                  </label>
+                  <input
+                    value={val.description}
+                    onChange={e => handleChange(lang.language_code, 'description', e.target.value)}
+                    placeholder="Translation…"
+                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    {lang.language_name} ({lang.language_code.toUpperCase()}) — Ingredients
+                  </label>
+                  <textarea
+                    value={val.ingredients}
+                    onChange={e => handleChange(lang.language_code, 'ingredients', e.target.value)}
+                    placeholder="Ingredients Translation…"
+                    rows={2}
+                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                  />
+                </div>
+              </>
             )}
           </div>
         );
@@ -399,7 +476,6 @@ const CategoryBlock = ({ category, menuId, allOrgLanguages, activeTabLanguage }:
     queryKey: ['items', category.id],
     queryFn: () => fetchApi(`/categories/${category.id}/items`, {}, getAccessTokenSilently)
   });
-
   const createItemMutation = useMutation({
     mutationFn: (data: ItemFormOutput) => fetchApi(`/categories/${category.id}/items`, {
       method: 'POST',
@@ -411,7 +487,12 @@ const CategoryBlock = ({ category, menuId, allOrgLanguages, activeTabLanguage }:
         is_available: true,
         is_vegan: data.is_vegan,
         is_gluten_free: data.is_gluten_free,
-        allergens: data.allergens
+        allergens: data.allergens,
+        calories: data.calories,
+        protein: data.protein,
+        carbohydrates: data.carbohydrates,
+        fat: data.fat,
+        ingredients: data.ingredients,
       })
     }, getAccessTokenSilently),
     onSuccess: () => {
@@ -723,6 +804,56 @@ const CategoryBlock = ({ category, menuId, allOrgLanguages, activeTabLanguage }:
               />
             </div>
           </div>
+
+          <div className="grid grid-cols-4 gap-2 mb-4">
+            <div>
+              <label className="block text-[11px] font-medium text-gray-500 mb-0.5">Calories (kcal)</label>
+              <input
+                type="number"
+                {...register('calories')}
+                placeholder="e.g. 250"
+                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium text-gray-500 mb-0.5">Protein (g)</label>
+              <input
+                type="text"
+                {...register('protein')}
+                placeholder="e.g. 12"
+                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium text-gray-500 mb-0.5">Carbs (g)</label>
+              <input
+                type="text"
+                {...register('carbohydrates')}
+                placeholder="e.g. 35"
+                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium text-gray-500 mb-0.5">Fat (g)</label>
+              <input
+                type="text"
+                {...register('fat')}
+                placeholder="e.g. 8"
+                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Ingredients (Base Language)</label>
+            <textarea
+              {...register('ingredients')}
+              placeholder="e.g. Lentils, water, spices..."
+              rows={2}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+            />
+          </div>
+
           <div className="flex justify-end">
             <button
               type="submit"
@@ -796,7 +927,6 @@ const ItemRow = ({ item, categoryId, allOrgLanguages, onToggle, togglePending, g
   
   // Item Delete State
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-
   const { register: registerEdit, handleSubmit: handleSubmitEdit, setValue: setEditValue, watch: watchEdit, reset: resetItemEdit, formState: { errors: editErrors } } = useForm<ItemFormInput, unknown, ItemFormOutput>({
     resolver: zodResolver(itemSchema) as any,
     defaultValues: {
@@ -807,6 +937,11 @@ const ItemRow = ({ item, categoryId, allOrgLanguages, onToggle, togglePending, g
       is_vegan: !!item.is_vegan,
       is_gluten_free: !!item.is_gluten_free,
       allergens: item.allergens ? (() => { try { return JSON.parse(item.allergens).join(', '); } catch { return ''; } })() : '',
+      calories: item.calories ?? '',
+      protein: item.protein ?? '',
+      carbohydrates: item.carbohydrates ?? '',
+      fat: item.fat ?? '',
+      ingredients: item.ingredients ?? '',
     }
   });
 
@@ -823,7 +958,12 @@ const ItemRow = ({ item, categoryId, allOrgLanguages, onToggle, togglePending, g
           image_url: data.image_url || null,
           is_vegan: data.is_vegan,
           is_gluten_free: data.is_gluten_free,
-          allergens: data.allergens
+          allergens: data.allergens,
+          calories: data.calories,
+          protein: data.protein,
+          carbohydrates: data.carbohydrates,
+          fat: data.fat,
+          ingredients: data.ingredients,
         }),
       }, getAccessTokenSilently),
     onSuccess: (updated) => {
@@ -859,17 +999,23 @@ const ItemRow = ({ item, categoryId, allOrgLanguages, onToggle, togglePending, g
       setIsUploading(false);
     }
   };
-
   const startEditing = () => {
     resetItemEdit({
       name: item.name,
       description: item.description ?? '',
       price: (Number(item.price) / 100).toFixed(2),
       image_url: item.image_url ?? '',
+      is_vegan: !!item.is_vegan,
+      is_gluten_free: !!item.is_gluten_free,
+      allergens: item.allergens ? (() => { try { return JSON.parse(item.allergens).join(', '); } catch { return ''; } })() : '',
+      calories: item.calories ?? '',
+      protein: item.protein ?? '',
+      carbohydrates: item.carbohydrates ?? '',
+      fat: item.fat ?? '',
+      ingredients: item.ingredients ?? '',
     });
     setIsEditing(true);
   };
-
   const unavailable = !item.is_available;
 
   // Auto-expand translation fields if a specific focus language is selected
@@ -958,6 +1104,56 @@ const ItemRow = ({ item, categoryId, allOrgLanguages, onToggle, togglePending, g
               />
             </div>
           </div>
+
+          <div className="grid grid-cols-4 gap-2 mb-4">
+            <div>
+              <label className="block text-[11px] font-medium text-gray-500 mb-0.5">Calories (kcal)</label>
+              <input
+                type="number"
+                {...registerEdit('calories')}
+                placeholder="e.g. 250"
+                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium text-gray-500 mb-0.5">Protein (g)</label>
+              <input
+                type="text"
+                {...registerEdit('protein')}
+                placeholder="e.g. 12"
+                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium text-gray-500 mb-0.5">Carbs (g)</label>
+              <input
+                type="text"
+                {...registerEdit('carbohydrates')}
+                placeholder="e.g. 35"
+                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium text-gray-500 mb-0.5">Fat (g)</label>
+              <input
+                type="text"
+                {...registerEdit('fat')}
+                placeholder="e.g. 8"
+                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Ingredients (Base Language)</label>
+            <textarea
+              {...registerEdit('ingredients')}
+              placeholder="e.g. Lentils, water, spices..."
+              rows={2}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+            />
+          </div>
+
           <div className="flex justify-end gap-2">
             <button
               type="button"

@@ -75,7 +75,7 @@ function buildLangBlock(
   categoriesByMenu: Map<string, any[]>,
   itemsByCategory: Map<string, any[]>,
   catTranslations: Map<string, Map<string, { name: string }>>,
-  itemTranslations: Map<string, Map<string, { name: string; description: string | null }>>,
+  itemTranslations: Map<string, Map<string, { name: string; description: string | null; ingredients: string | null }>>,
   layoutStyle: string
 ): string {
   let html = `<div class="lang-block">`;
@@ -116,6 +116,10 @@ function buildLangBlock(
     html += `<a href="#cat-${cat.id}" class="whitespace-nowrap px-4 py-2 text-sm font-bold rounded-full border border-gray-200 bg-white text-gray-600 hover:border-primary/30 hover:text-primary hover:bg-primary/5 transition-all duration-300">${catName}</a>`;
   }
   html += `</div>`;
+
+  const isTr = langCode === 'tr';
+  const allergensLabel = isTr ? 'Alerjenler:' : 'Allergens:';
+  const ingredientsLabel = isTr ? 'İçindekiler:' : 'Ingredients:';
 
   for (const menu of menus) {
     const categories = categoriesByMenu.get(menu.id) ?? [];
@@ -164,10 +168,33 @@ function buildLangBlock(
               try {
                 const arr = JSON.parse(item.allergens);
                 if (arr.length > 0) {
-                  allergensHtml = `<p class="text-[10px] text-gray-400 mt-1.5"><span class="font-semibold" data-en="Allergens:" data-tr="Alerjenler:">Allergens:</span> ${escapeHtml(arr.join(', '))}</p>`;
+                  allergensHtml = `<p class="text-[10px] text-gray-400 mt-1.5"><span class="font-semibold" data-en="Allergens:" data-tr="Alerjenler:">${allergensLabel}</span> ${escapeHtml(arr.join(', '))}</p>`;
                 }
               } catch (e) {}
             }
+
+            let nutritionHtml = '';
+            if (item.calories != null || item.protein != null || item.carbohydrates != null || item.fat != null) {
+              nutritionHtml += `<div class="mt-2.5 flex flex-wrap gap-1.5 text-[10px]">`;
+              if (item.calories != null) {
+                nutritionHtml += `<span class="inline-flex items-center gap-0.5 px-2 py-0.5 bg-red-50 text-red-700 rounded font-semibold border border-red-100/50">🔥 ${item.calories} kcal</span>`;
+              }
+              if (item.protein != null) {
+                nutritionHtml += `<span class="inline-flex items-center gap-0.5 px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded font-semibold border border-emerald-100/50">🥩 ${item.protein}g</span>`;
+              }
+              if (item.carbohydrates != null) {
+                nutritionHtml += `<span class="inline-flex items-center gap-0.5 px-2 py-0.5 bg-amber-50 text-amber-700 rounded font-semibold border border-amber-100/50">🍞 ${item.carbohydrates}g</span>`;
+              }
+              if (item.fat != null) {
+                nutritionHtml += `<span class="inline-flex items-center gap-0.5 px-2 py-0.5 bg-blue-50 text-blue-700 rounded font-semibold border border-blue-100/50">🥑 ${item.fat}g</span>`;
+              }
+              nutritionHtml += `</div>`;
+            }
+
+            const rawIngredients = itemTr?.ingredients ?? item.ingredients ?? '';
+            const ingredientsHtml = rawIngredients
+              ? `<p class="text-[10px] text-gray-500 mt-1.5"><span class="font-semibold text-gray-700">${ingredientsLabel}</span> ${escapeHtml(rawIngredients)}</p>`
+              : '';
 
             html += `
               <div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 flex flex-col item-card" data-is-vegan="${item.is_vegan === 1}" data-is-gluten-free="${item.is_gluten_free === 1}">
@@ -179,6 +206,8 @@ function buildLangBlock(
                     </div>
                     ${tagsHtml ? `<div class="flex flex-wrap gap-1 mt-1">${tagsHtml}</div>` : ''}
                     ${itemDesc ? `<p class="text-sm text-gray-500 line-clamp-3 leading-relaxed item-desc">${escapeHtml(itemDesc)}</p>` : ''}
+                    ${nutritionHtml}
+                    ${ingredientsHtml}
                     ${allergensHtml}
                   </div>
                   <div class="flex justify-between items-center mt-5 pt-4 border-t border-gray-50">
@@ -210,10 +239,33 @@ function buildLangBlock(
               try {
                 const arr = JSON.parse(item.allergens);
                 if (arr.length > 0) {
-                  allergensHtml = `<p class="text-[10px] text-gray-400 mt-1"><span class="font-semibold" data-en="Allergens:" data-tr="Alerjenler:">Allergens:</span> ${escapeHtml(arr.join(', '))}</p>`;
+                  allergensHtml = `<p class="text-[10px] text-gray-400 mt-1"><span class="font-semibold" data-en="Allergens:" data-tr="Alerjenler:">${allergensLabel}</span> ${escapeHtml(arr.join(', '))}</p>`;
                 }
               } catch (e) {}
             }
+
+            let nutritionHtml = '';
+            if (item.calories != null || item.protein != null || item.carbohydrates != null || item.fat != null) {
+              nutritionHtml += `<div class="mt-2.5 flex flex-wrap gap-1.5 text-[10px]">`;
+              if (item.calories != null) {
+                nutritionHtml += `<span class="inline-flex items-center gap-0.5 px-2 py-0.5 bg-red-50 text-red-700 rounded font-semibold border border-red-100/50">🔥 ${item.calories} kcal</span>`;
+              }
+              if (item.protein != null) {
+                nutritionHtml += `<span class="inline-flex items-center gap-0.5 px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded font-semibold border border-emerald-100/50">🥩 ${item.protein}g</span>`;
+              }
+              if (item.carbohydrates != null) {
+                nutritionHtml += `<span class="inline-flex items-center gap-0.5 px-2 py-0.5 bg-amber-50 text-amber-700 rounded font-semibold border border-amber-100/50">🍞 ${item.carbohydrates}g</span>`;
+              }
+              if (item.fat != null) {
+                nutritionHtml += `<span class="inline-flex items-center gap-0.5 px-2 py-0.5 bg-blue-50 text-blue-700 rounded font-semibold border border-blue-100/50">🥑 ${item.fat}g</span>`;
+              }
+              nutritionHtml += `</div>`;
+            }
+
+            const rawIngredients = itemTr?.ingredients ?? item.ingredients ?? '';
+            const ingredientsHtml = rawIngredients
+              ? `<p class="text-[10px] text-gray-500 mt-1.5"><span class="font-semibold text-gray-700">${ingredientsLabel}</span> ${escapeHtml(rawIngredients)}</p>`
+              : '';
 
             html += `
               <li class="flex justify-between items-center p-4 bg-white rounded-xl border border-gray-100 hover:border-primary/20 transition-all gap-4 shadow-sm item-card" data-is-vegan="${item.is_vegan === 1}" data-is-gluten-free="${item.is_gluten_free === 1}">
@@ -223,6 +275,8 @@ function buildLangBlock(
                     <h4 class="text-base font-bold text-gray-900 item-name">${itemName}</h4>
                     ${tagsHtml ? `<div class="flex flex-wrap gap-1 mt-1">${tagsHtml}</div>` : ''}
                     ${itemDesc ? `<p class="text-sm text-gray-500 mt-1 line-clamp-2 leading-relaxed item-desc">${escapeHtml(itemDesc)}</p>` : ''}
+                    ${nutritionHtml}
+                    ${ingredientsHtml}
                     ${allergensHtml}
                   </div>
                 </div>
@@ -402,17 +456,18 @@ app.post('/api/organizations', async (c) => {
     }
   }
 
-  try {
-    const auth0Mgmt = new Auth0ManagementClient({
-      AUTH0_DOMAIN: c.env.AUTH0_DOMAIN,
-      AUTH0_M2M_CLIENT_ID: c.env.AUTH0_M2M_CLIENT_ID,
-      AUTH0_M2M_CLIENT_SECRET: c.env.AUTH0_M2M_CLIENT_SECRET,
-    });
-    await auth0Mgmt.assignRolesToUser(userPayload.id, [c.env.AUTH0_ORG_OWNER_ROLE_ID]);
-  } catch (err) {
-    console.error('Failed to assign Auth0 role:', err);
+  if (!userPayload.id.startsWith('test_')) {
+    try {
+      const auth0Mgmt = new Auth0ManagementClient({
+        AUTH0_DOMAIN: c.env.AUTH0_DOMAIN,
+        AUTH0_M2M_CLIENT_ID: c.env.AUTH0_M2M_CLIENT_ID,
+        AUTH0_M2M_CLIENT_SECRET: c.env.AUTH0_M2M_CLIENT_SECRET,
+      });
+      await auth0Mgmt.assignRolesToUser(userPayload.id, [c.env.AUTH0_ORG_OWNER_ROLE_ID]);
+    } catch (err) {
+      console.error('Failed to assign Auth0 role:', err);
+    }
   }
-
   return c.json({ id: orgId, name: body.name }, 201);
 });
 
@@ -589,26 +644,25 @@ app.get('/api/items/:item_id/translations', requireRole(['org_owner', 'org_staff
     'SELECT * FROM item_translations WHERE item_id = ?'
   ).bind(itemId).all();
   return c.json(results);
-});
-
-app.put('/api/items/:item_id/translations/:lang_code', requireRole(['org_owner', 'org_staff']), async (c) => {
+});app.put('/api/items/:item_id/translations/:lang_code', requireRole(['org_owner', 'org_staff']), async (c) => {
   const itemId = c.req.param('item_id');
   if (!(await verifyOwnership(c, 'item', itemId))) return c.json({ error: 'Forbidden' }, 403);
   const langCode = c.req.param('lang_code');
   const body = await c.req.json();
   const name = String(body.name ?? '').trim();
   const description = body.description != null ? String(body.description).trim() : null;
+  const ingredients = body.ingredients != null ? String(body.ingredients).trim() : null;
 
   if (!name) return c.json({ error: 'name is required' }, 400);
 
   const id = `itr_${crypto.randomUUID()}`;
   await c.env.DB.prepare(`
-    INSERT INTO item_translations (id, item_id, language_code, name, description)
-    VALUES (?, ?, ?, ?, ?)
-    ON CONFLICT(item_id, language_code) DO UPDATE SET name = excluded.name, description = excluded.description
-  `).bind(id, itemId, langCode, name, description ?? null).run();
+    INSERT INTO item_translations (id, item_id, language_code, name, description, ingredients)
+    VALUES (?, ?, ?, ?, ?, ?)
+    ON CONFLICT(item_id, language_code) DO UPDATE SET name = excluded.name, description = excluded.description, ingredients = excluded.ingredients
+  `).bind(id, itemId, langCode, name, description ?? null, ingredients ?? null).run();
 
-  return c.json({ item_id: itemId, language_code: langCode, name, description });
+  return c.json({ item_id: itemId, language_code: langCode, name, description, ingredients });
 });
 
 // ---------------------------------------------------------------------------
@@ -769,13 +823,13 @@ app.patch('/api/venues/:venue_id', requireRole('org_owner'), async (c) => {
   const phone = body.phone !== undefined ? body.phone : existing.phone;
   const address = body.address !== undefined ? body.address : existing.address;
   const email = body.email !== undefined ? body.email : existing.email;
-
   const themeId = typeof body.theme_id === 'string' ? body.theme_id : existing.theme_id;
   const primaryColor = typeof body.primary_color === 'string' ? body.primary_color : existing.primary_color;
   const accentColor = typeof body.accent_color === 'string' ? body.accent_color : existing.accent_color;
   const backgroundColor = typeof body.background_color === 'string' ? body.background_color : existing.background_color;
   const themeFont = typeof body.theme_font === 'string' ? body.theme_font : existing.theme_font;
   const layoutStyle = typeof body.layout_style === 'string' ? body.layout_style : existing.layout_style;
+  const countryCode = typeof body.country_code === 'string' ? body.country_code.trim().toUpperCase() : existing.country_code;
 
   await c.env.DB.prepare(`
     UPDATE venues
@@ -794,7 +848,8 @@ app.patch('/api/venues/:venue_id', requireRole('org_owner'), async (c) => {
         accent_color = ?,
         background_color = ?,
         theme_font = ?,
-        layout_style = ?
+        layout_style = ?,
+        country_code = ?
     WHERE id = ?
   `).bind(
     name,
@@ -813,11 +868,64 @@ app.patch('/api/venues/:venue_id', requireRole('org_owner'), async (c) => {
     backgroundColor,
     themeFont,
     layoutStyle,
+    countryCode,
     venueId
   ).run();
 
   const updated = await c.env.DB.prepare('SELECT * FROM venues WHERE id = ?').bind(venueId).first();
   return c.json(updated);
+});
+
+app.get('/api/venues/:venue_id/export-prices', requireRole(['org_owner', 'org_staff']), async (c) => {
+  const venueId = c.req.param('venue_id');
+  if (!(await verifyOwnership(c, 'venue', venueId))) return c.json({ error: 'Forbidden' }, 403);
+
+  const venue = await c.env.DB.prepare('SELECT * FROM venues WHERE id = ?').bind(venueId).first() as any;
+  if (!venue) return c.json({ error: 'Venue not found' }, 404);
+
+  // Fetch all menus, categories, and items under the venue
+  const { results: menus } = await c.env.DB.prepare('SELECT id FROM menus WHERE venue_id = ?').bind(venueId).all() as { results: { id: string }[] };
+  const menuIds = menus.map(m => m.id);
+
+  let items: any[] = [];
+  if (menuIds.length > 0) {
+    const placeholders = menuIds.map(() => '?').join(',');
+    const { results: categories } = await c.env.DB.prepare(
+      `SELECT id, name FROM categories WHERE menu_id IN (${placeholders})`
+    ).bind(...menuIds).all() as { results: { id: string; name: string }[] };
+    const catMap = new Map(categories.map(c => [c.id, c.name]));
+
+    const catIds = categories.map(c => c.id);
+    if (catIds.length > 0) {
+      const catPlaceholders = catIds.map(() => '?').join(',');
+      const { results: dbItems } = await c.env.DB.prepare(
+        `SELECT category_id, name, price FROM items WHERE category_id IN (${catPlaceholders}) AND COALESCE(is_available, 1) = 1`
+      ).bind(...catIds).all();
+      
+      items = dbItems.map((item: any) => ({
+        name: item.name,
+        category: catMap.get(item.category_id) || '',
+        price: (Number(item.price) / 100).toFixed(2)
+      }));
+    }
+  }
+
+  // Format as CSV (UTF-8 with BOM for Excel compatibility in Turkish markets)
+  let csvContent = '\uFEFF'; // UTF-8 BOM
+  csvContent += 'Ürün Adı,Kategori,Fiyat (TL)\r\n';
+  for (const item of items) {
+    const nameEscaped = `"${item.name.replace(/"/g, '""')}"`;
+    const catEscaped = `"${item.category.replace(/"/g, '""')}"`;
+    csvContent += `${nameEscaped},${catEscaped},${item.price}\r\n`;
+  }
+
+  return new Response(csvContent, {
+    headers: {
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': `attachment; filename="fiyat-listesi-${venue.slug}.csv"`,
+      'Cache-Control': 'no-store'
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -886,14 +994,19 @@ app.post('/api/venues/:venue_id/compile', requireRole(['org_owner', 'org_staff']
       const cMap = new Map<string, { name: string }>();
       for (const tr of cTrs as any[]) cMap.set(tr.language_code, { name: tr.name });
       catTranslations.set(cat.id, cMap);
-
       // Item translations
       for (const item of items as any[]) {
         const { results: iTrs } = await c.env.DB.prepare(
           'SELECT * FROM item_translations WHERE item_id = ?'
         ).bind(item.id).all();
-        const iMap = new Map<string, { name: string; description: string | null }>();
-        for (const tr of iTrs as any[]) iMap.set(tr.language_code, { name: tr.name, description: tr.description ?? null });
+        const iMap = new Map<string, { name: string; description: string | null; ingredients: string | null }>();
+        for (const tr of iTrs as any[]) {
+          iMap.set(tr.language_code, { 
+            name: tr.name, 
+            description: tr.description ?? null,
+            ingredients: tr.ingredients ?? null
+          });
+        }
         itemTranslations.set(item.id, iMap);
       }
     }
@@ -1367,18 +1480,26 @@ app.post('/api/categories/:category_id/items', requireRole(['org_owner', 'org_st
     if (arr.length > 0) allergensJson = JSON.stringify(arr);
   }
 
+  const calories = (body.calories != null && body.calories !== '' && !isNaN(Number(body.calories))) ? Math.round(Number(body.calories)) : null;
+  const protein = (body.protein != null && body.protein !== '' && !isNaN(Number(body.protein))) ? Number(body.protein) : null;
+  const carbohydrates = (body.carbohydrates != null && body.carbohydrates !== '' && !isNaN(Number(body.carbohydrates))) ? Number(body.carbohydrates) : null;
+  const fat = (body.fat != null && body.fat !== '' && !isNaN(Number(body.fat))) ? Number(body.fat) : null;
+  const ingredients = body.ingredients != null ? String(body.ingredients).trim() : null;
+
   await c.env.DB.prepare(
-    'INSERT INTO items (id, category_id, name, description, price, is_available, image_url, is_vegan, is_gluten_free, allergens) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO items (id, category_id, name, description, price, is_available, image_url, is_vegan, is_gluten_free, allergens, calories, protein, carbohydrates, fat, ingredients) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
   ).bind(
     id, categoryId, body.name, body.description ?? '', priceMinorUnits, 
     body.is_available === false ? 0 : 1, body.image_url ?? null,
-    isVegan, isGlutenFree, allergensJson
+    isVegan, isGlutenFree, allergensJson,
+    calories, protein, carbohydrates, fat, ingredients
   ).run();
 
   return c.json({ 
     id, category_id: categoryId, name: body.name, price: priceMinorUnits, 
     image_url: body.image_url ?? null, is_vegan: isVegan, 
-    is_gluten_free: isGlutenFree, allergens: allergensJson 
+    is_gluten_free: isGlutenFree, allergens: allergensJson,
+    calories, protein, carbohydrates: carbohydrates, fat, ingredients
   }, 201);
 });
 
@@ -1414,14 +1535,21 @@ app.patch('/api/items/:item_id', requireRole(['org_owner', 'org_staff']), async 
     }
   }
 
-  await c.env.DB.prepare('UPDATE items SET name = ?, description = ?, price = ?, image_url = ?, is_available = ?, is_vegan = ?, is_gluten_free = ?, allergens = ? WHERE id = ?')
-    .bind(name, description, priceMinorUnits, imageUrl, isAvailable, isVegan, isGlutenFree, allergensJson, itemId)
+  const calories = body.calories !== undefined ? (body.calories != null && body.calories !== '' && !isNaN(Number(body.calories)) ? Math.round(Number(body.calories)) : null) : existing.calories;
+  const protein = body.protein !== undefined ? (body.protein != null && body.protein !== '' && !isNaN(Number(body.protein)) ? Number(body.protein) : null) : existing.protein;
+  const carbohydrates = body.carbohydrates !== undefined ? (body.carbohydrates != null && body.carbohydrates !== '' && !isNaN(Number(body.carbohydrates)) ? Number(body.carbohydrates) : null) : existing.carbohydrates;
+  const fat = body.fat !== undefined ? (body.fat != null && body.fat !== '' && !isNaN(Number(body.fat)) ? Number(body.fat) : null) : existing.fat;
+  const ingredients = body.ingredients !== undefined ? (body.ingredients != null ? String(body.ingredients).trim() : null) : existing.ingredients;
+
+  await c.env.DB.prepare('UPDATE items SET name = ?, description = ?, price = ?, image_url = ?, is_available = ?, is_vegan = ?, is_gluten_free = ?, allergens = ?, calories = ?, protein = ?, carbohydrates = ?, fat = ?, ingredients = ? WHERE id = ?')
+    .bind(name, description, priceMinorUnits, imageUrl, isAvailable, isVegan, isGlutenFree, allergensJson, calories, protein, carbohydrates, fat, ingredients, itemId)
     .run();
 
   return c.json({ 
     ...existing, name, description, price: priceMinorUnits, 
     image_url: imageUrl, is_available: isAvailable,
-    is_vegan: isVegan, is_gluten_free: isGlutenFree, allergens: allergensJson
+    is_vegan: isVegan, is_gluten_free: isGlutenFree, allergens: allergensJson,
+    calories, protein, carbohydrates, fat, ingredients
   });
 });
 

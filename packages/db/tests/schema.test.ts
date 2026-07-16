@@ -74,7 +74,6 @@ describe('D1 Schema Validation', () => {
     expect(item?.name).toBe('Fries');
     expect(item?.price).toBe(500);
   });
-
   it('should allow inserting and verifying a subscription', async () => {
     const orgId = 'org_789';
     const subId = 'sub_789';
@@ -85,5 +84,44 @@ describe('D1 Schema Validation', () => {
     const sub = await env.DB.prepare(`SELECT * FROM subscriptions WHERE id = ?`).bind(subId).first();
     expect(sub?.tier).toBe('pro');
     expect(sub?.status).toBe('active');
+  });
+
+  it('should support nutrition facts, country code, and ingredients', async () => {
+    const orgId = 'org_nutrition';
+    const venueId = 'venue_nutrition';
+    const menuId = 'menu_nutrition';
+    const catId = 'cat_nutrition';
+    const itemId = 'item_nutrition';
+
+    // 1. Insert Org
+    await env.DB.prepare(`INSERT INTO organizations (id, name) VALUES (?, ?)`).bind(orgId, 'Nutrition Org').run();
+    
+    // 2. Insert Venue with country code
+    await env.DB.prepare(`INSERT INTO venues (id, org_id, name, slug, country_code) VALUES (?, ?, ?, ?, ?)`).bind(venueId, orgId, 'Nutrition Cafe', 'nutrition-cafe', 'TR').run();
+    
+    // Verify venue country code
+    const venue = await env.DB.prepare(`SELECT * FROM venues WHERE id = ?`).bind(venueId).first() as any;
+    expect(venue?.country_code).toBe('TR');
+
+    // 3. Insert Menu
+    await env.DB.prepare(`INSERT INTO menus (id, venue_id, name, is_active) VALUES (?, ?, ?, ?)`).bind(menuId, venueId, 'Nutrition Menu', 1).run();
+    
+    // 4. Insert Category
+    await env.DB.prepare(`INSERT INTO categories (id, menu_id, name, sort_order) VALUES (?, ?, ?, ?)`).bind(catId, menuId, 'Nutrition Food', 1).run();
+    
+    // 5. Insert Item with nutrition facts and ingredients
+    await env.DB.prepare(`
+      INSERT INTO items (id, category_id, name, description, price, is_available, calories, protein, carbohydrates, fat, ingredients) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(itemId, catId, 'Salad', 'Healthy', 1250, 1, 240, 12.5, 8.0, 18.0, 'Lettuce, olive oil, parmesan').run();
+
+    // Verify Item nutrition and ingredients
+    const item = await env.DB.prepare(`SELECT * FROM items WHERE id = ?`).bind(itemId).first() as any;
+    expect(item?.name).toBe('Salad');
+    expect(item?.calories).toBe(240);
+    expect(item?.protein).toBe(12.5);
+    expect(item?.carbohydrates).toBe(8.0);
+    expect(item?.fat).toBe(18.0);
+    expect(item?.ingredients).toBe('Lettuce, olive oil, parmesan');
   });
 });

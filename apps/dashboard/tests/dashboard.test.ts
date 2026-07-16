@@ -18,6 +18,8 @@ import sql6 from '../../../packages/db/migrations/0006_multilanguage.sql?raw';
 import sql7 from '../../../packages/db/migrations/0007_theme_and_org_details.sql?raw';
 // @ts-ignore
 import sql8 from '../../../packages/db/migrations/0008_allergens_dietary.sql?raw';
+// @ts-ignore
+import sql9 from '../../../packages/db/migrations/0009_nutrition_info.sql?raw';
 
 declare module 'cloudflare:test' {
   interface ProvidedEnv {
@@ -28,7 +30,7 @@ declare module 'cloudflare:test' {
 describe('Dashboard API Integration', () => {
   beforeAll(async () => {
     // Setup D1 Schema with all migrations
-    const sqls = [sql1, sql2, sql3, sql4, sql5, sql6, sql7, sql8];
+    const sqls = [sql1, sql2, sql3, sql4, sql5, sql6, sql7, sql8, sql9];
     for (const sql of sqls) {
       const cleanSql = sql.replace(/--.*/g, '');
       const statements = cleanSql.split(';').map(s => s.trim()).filter(s => s.length > 0);

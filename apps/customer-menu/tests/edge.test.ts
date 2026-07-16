@@ -10,6 +10,7 @@ declare module 'cloudflare:test' {
 }
 
 describe('Edge Delivery Worker', () => {
+
   it('should render the landing page at root route', async () => {
     const res = await app.request('/', {}, {
       ...env,
@@ -20,8 +21,8 @@ describe('Edge Delivery Worker', () => {
     
     const htmlText = await res.text();
     expect(htmlText).toContain('QR Menu');
-    expect(htmlText).toContain('Sıfır Gecikmeli Statik Derleme Altyapısı');
-    expect(htmlText).toContain('Daha Hızlısını Bulamayacağınız');
+    expect(htmlText).toContain('Zero-Database Static Compiler Pipeline');
+    expect(htmlText).toContain('Lightning-Fast QR Menus');
     expect(htmlText).toContain('WORKOUSE');
     expect(htmlText).toContain('Emre Yılmaz');
     expect(htmlText).toContain('fullstack');
@@ -30,8 +31,8 @@ describe('Edge Delivery Worker', () => {
     expect(htmlText).toContain('Standard');
     expect(htmlText).toContain('Business');
     expect(htmlText).toContain('Enterprise');
-    expect(htmlText).toContain('100 TRY');
-    expect(htmlText).toContain('500 TRY');
+    expect(htmlText).toContain('$5');
+    expect(htmlText).toContain('$20');
     expect(htmlText).toContain('Theme Customizer');
     expect(htmlText).toContain('demo-menu-preview');
     expect(htmlText).toContain('/privacy');
@@ -48,7 +49,6 @@ describe('Edge Delivery Worker', () => {
     
     const htmlText = await res.text();
     expect(htmlText).toContain('Privacy Policy');
-    expect(htmlText).toContain('Gizlilik Politikası');
     expect(htmlText).toContain('WORKOUSE');
   });
 
@@ -62,11 +62,27 @@ describe('Edge Delivery Worker', () => {
     
     const htmlText = await res.text();
     expect(htmlText).toContain('Terms of Service');
-    expect(htmlText).toContain('Kullanım Koşulları');
     expect(htmlText).toContain('Free');
     expect(htmlText).toContain('Standard');
     expect(htmlText).toContain('Business');
     expect(htmlText).toContain('Enterprise');
+  });
+
+  it('should render the compliance FAQ only on Turkish language', async () => {
+    const resEn = await app.request('/', {}, {
+      ...env,
+      DASHBOARD_URL: 'http://test-dashboard.local'
+    });
+    const htmlEn = await resEn.text();
+    expect(htmlEn).not.toContain('Yasal Mevzuat ve Uumluluk');
+
+    const resTr = await app.request('/?lang=tr', {}, {
+      ...env,
+      DASHBOARD_URL: 'http://test-dashboard.local'
+    });
+    const htmlTr = await resTr.text();
+    expect(htmlTr).toContain('Yasal Mevzuat ve Uumluluk');
+    expect(htmlTr).toContain('Bakanlık Uyumlu');
   });
 
   it('should return 404 HTML if menu not found in KV', async () => {

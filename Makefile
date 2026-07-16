@@ -35,7 +35,7 @@ deploy: build
 	@echo "Deploying customer menu worker..."
 	(cd apps/customer-menu && npx wrangler deploy)
 	@echo "Deploying dashboard UI..."
-	(cd apps/dashboard-ui && npx wrangler pages deploy dist --project-name qr-menu-dashboard-ui)
+	(cd apps/dashboard-ui && npx wrangler pages deploy dist --project-name qr-menu-dashboard-ui --branch master)
 
 test:
 	pnpm --filter "*" run test

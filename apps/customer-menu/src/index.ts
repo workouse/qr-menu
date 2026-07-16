@@ -208,8 +208,67 @@ app.get('/', async (c) => {
   const seoDesc = lang === 'tr'
     ? 'Yüksek performanslı, mobil odaklı QR menüler oluşturun. Sıfır veritabanı gecikmesi, anında uç nokta güncellemeleri ve şık dinamik tasarımlar.'
     : 'Generate high-performance, mobile-first QR menus. Zero database lag, instant edge updates, and beautiful dynamic designs.';
-
   const trText = (key: TranslationKey) => t(key, lang);
+
+  let faqSectionHtml = '';
+  if (lang === 'tr') {
+    faqSectionHtml = `
+    <!-- Compliance FAQ Section (Turkey Only) -->
+    <section id="compliance-faq" class="max-w-4xl mx-auto px-6 py-24 relative z-10 border-t border-white/5 text-left">
+      <div class="text-center max-w-3xl mx-auto mb-16">
+        <span class="px-3 py-1 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-bold rounded-full uppercase tracking-wider">${trText('compliance_badge')}</span>
+        <h2 class="heading-font text-3xl sm:text-5xl font-black text-white mt-4">${trText('faq_compliance_title')}</h2>
+      </div>
+
+      <div class="space-y-4">
+        <!-- FAQ 1 -->
+        <div class="faq-item group bg-white/5 border border-white/5 rounded-2xl overflow-hidden transition-all duration-300">
+          <button class="w-full flex justify-between items-center p-6 text-left focus:outline-none" onclick="toggleFaq(this)">
+            <span class="heading-font font-bold text-white text-base sm:text-lg group-hover:text-brand-400 transition-colors">${trText('faq1_q')}</span>
+            <svg class="w-5 h-5 text-gray-400 transform transition-transform duration-300 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+            </svg>
+          </button>
+          <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300 ease-in-out">
+            <div class="p-6 pt-0 text-sm text-gray-400 border-t border-white/5 leading-relaxed bg-white/[0.01]">
+              ${trText('faq1_a')}
+            </div>
+          </div>
+        </div>
+
+        <!-- FAQ 2 -->
+        <div class="faq-item group bg-white/5 border border-white/5 rounded-2xl overflow-hidden transition-all duration-300">
+          <button class="w-full flex justify-between items-center p-6 text-left focus:outline-none" onclick="toggleFaq(this)">
+            <span class="heading-font font-bold text-white text-base sm:text-lg group-hover:text-brand-400 transition-colors">${trText('faq2_q')}</span>
+            <svg class="w-5 h-5 text-gray-400 transform transition-transform duration-300 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+            </svg>
+          </button>
+          <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300 ease-in-out">
+            <div class="p-6 pt-0 text-sm text-gray-400 border-t border-white/5 leading-relaxed bg-white/[0.01]">
+              ${trText('faq2_a')}
+            </div>
+          </div>
+        </div>
+
+        <!-- FAQ 3 -->
+        <div class="faq-item group bg-white/5 border border-white/5 rounded-2xl overflow-hidden transition-all duration-300">
+          <button class="w-full flex justify-between items-center p-6 text-left focus:outline-none" onclick="toggleFaq(this)">
+            <span class="heading-font font-bold text-white text-base sm:text-lg group-hover:text-brand-400 transition-colors">${trText('faq3_q')}</span>
+            <svg class="w-5 h-5 text-gray-400 transform transition-transform duration-300 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+            </svg>
+          </button>
+          <div class="faq-answer max-h-0 overflow-hidden transition-all duration-300 ease-in-out">
+            <div class="p-6 pt-0 text-sm text-gray-400 border-t border-white/5 leading-relaxed bg-white/[0.01]">
+              ${trText('faq3_a')}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    `;
+  }
 
   const html = `<!DOCTYPE html>
 <html lang="${lang}">
@@ -309,8 +368,7 @@ app.get('/', async (c) => {
         <h2 class="heading-font text-3xl sm:text-5xl font-black text-white">${trText('features_title')}</h2>
         <p class="mt-4 text-gray-400">${trText('features_subtitle')}</p>
       </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         <!-- Feature 1 -->
         <div class="p-8 rounded-2xl bg-white/5 border border-white/5 hover:border-brand-500/20 hover:bg-white/10 transition-all duration-300 text-left">
           <div class="w-12 h-12 rounded-xl bg-brand-500/10 border border-brand-500/25 flex items-center justify-center text-brand-500 mb-6">
@@ -347,6 +405,19 @@ app.get('/', async (c) => {
           <h3 class="heading-font text-xl font-bold text-white mb-3">${trText('feat3_title')}</h3>
           <p class="text-gray-400 text-sm leading-relaxed">
             ${trText('feat3_desc')}
+          </p>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="p-8 rounded-2xl bg-white/5 border border-white/5 hover:border-brand-500/20 hover:bg-white/10 transition-all duration-300 text-left">
+          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 mb-6">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
+          <h3 class="heading-font text-xl font-bold text-white mb-3">${trText('feat4_title')}</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">
+            ${trText('feat4_desc')}
           </p>
         </div>
       </div>
@@ -427,6 +498,7 @@ app.get('/', async (c) => {
                   </div>
                   <div class="flex justify-between items-center mt-2 border-t pt-1 border-gray-50">
                     <span class="text-[10px] font-black" style="color: var(--demo-accent);">120 TL</span>
+                    <span class="text-[8px] bg-red-50 text-red-700 font-bold px-1 rounded-sm border border-red-100/50 scale-90 shrink-0">🔥 520 kcal</span>
                   </div>
                 </div>
                 <!-- Item 2 -->
@@ -438,6 +510,7 @@ app.get('/', async (c) => {
                   </div>
                   <div class="flex justify-between items-center mt-2 border-t pt-1 border-gray-50">
                     <span class="text-[10px] font-black" style="color: var(--demo-accent);">60 TL</span>
+                    <span class="text-[8px] bg-red-50 text-red-700 font-bold px-1 rounded-sm border border-red-100/50 scale-90 shrink-0">🔥 320 kcal</span>
                   </div>
                 </div>
               </div>
@@ -449,7 +522,7 @@ app.get('/', async (c) => {
                   <div class="flex items-center gap-2 min-w-0">
                     <div class="w-10 h-10 bg-gray-100 rounded flex-shrink-0 flex items-center justify-center text-xs">🍔</div>
                     <div class="min-w-0">
-                      <h6 class="text-[10px] font-bold text-gray-800 leading-tight">Classic Cheeseburger</h6>
+                      <h6 class="text-[10px] font-bold text-gray-800 leading-tight">Classic Cheeseburger <span class="text-[7px] text-red-600 font-semibold px-0.5 ml-1 bg-red-50 rounded">🔥 520 kcal</span></h6>
                       <p class="text-[8px] text-gray-400 line-clamp-1 mt-0.5">${trText('burger_desc_short')}</p>
                     </div>
                   </div>
@@ -460,7 +533,7 @@ app.get('/', async (c) => {
                   <div class="flex items-center gap-2 min-w-0">
                     <div class="w-10 h-10 bg-gray-100 rounded flex-shrink-0 flex items-center justify-center text-xs">🍟</div>
                     <div class="min-w-0">
-                      <h6 class="text-[10px] font-bold text-gray-800 leading-tight">${trText('truffle_fries')}</h6>
+                      <h6 class="text-[10px] font-bold text-gray-800 leading-tight">${trText('truffle_fries')} <span class="text-[7px] text-red-600 font-semibold px-0.5 ml-1 bg-red-50 rounded">🔥 320 kcal</span></h6>
                       <p class="text-[8px] text-gray-400 line-clamp-1 mt-0.5">${trText('parmesan_oil_short')}</p>
                     </div>
                   </div>
@@ -729,6 +802,8 @@ app.get('/', async (c) => {
         </div>
       </div>
     </section>
+
+    ${faqSectionHtml}
   </main>
 
   ${buildFooterHtml(lang)}
@@ -736,6 +811,21 @@ app.get('/', async (c) => {
   <!-- Customizer and translation scripts -->
 
   <script>
+    function toggleFaq(btn) {
+      var item = btn.parentElement;
+      var answer = item.querySelector('.faq-answer');
+      var svg = btn.querySelector('svg');
+      
+      var isOpen = item.classList.toggle('faq-open');
+      if (isOpen) {
+        answer.style.maxHeight = answer.scrollHeight + 'px';
+        svg.style.transform = 'rotate(180deg)';
+      } else {
+        answer.style.maxHeight = '0px';
+        svg.style.transform = 'rotate(0deg)';
+      }
+    }
+
     function updateDemoColor(color, hex, accentHex) {
       var container = document.getElementById('demo-menu-preview');
       if (container) {
