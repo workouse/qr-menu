@@ -5,3 +5,7 @@ AUTH0_M2M_CLIENT_SECRET=your_m2m_client_secret
 AUTH0_ORG_OWNER_ROLE_ID=rol_xxxxx
 AUTH0_ORG_STAFF_ROLE_ID=rol_yyyyy
 AUTH0_SUPERADMIN_ROLE_ID=rol_zzzzz
+LEMON_SQUEEZY_API_KEY=your_lemon_squeezy_api_key
+LEMON_SQUEEZY_WEBHOOK_SECRET=your_lemon_squeezy_webhook_secret
+# Set to 'true' for local/test mode, 'false' for production live payments
+LEMON_SQUEEZY_TEST_MODE=true

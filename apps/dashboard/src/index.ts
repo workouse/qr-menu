@@ -17,6 +17,7 @@ type Bindings = {
   AUTH0_SUPERADMIN_ROLE_ID: string;
   LEMON_SQUEEZY_API_KEY: string;
   LEMON_SQUEEZY_WEBHOOK_SECRET: string;
+  LEMON_SQUEEZY_TEST_MODE: string;
 };
 
 type Variables = {
@@ -704,7 +705,7 @@ app.post('/api/organizations/:org_id/billing/checkout', requireRole('org_owner')
       data: {
         type: 'checkouts',
         attributes: {
-          test_mode: true,
+          test_mode: c.env.LEMON_SQUEEZY_TEST_MODE === 'true',
           checkout_data: {
             custom: {
               org_id: orgId

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '../api/client';
 import { useAuth0 } from '@auth0/auth0-react';
@@ -266,14 +267,12 @@ export const Settings = () => {
                 </div>
                 <div>
                   {org?.subscription?.tier !== 'Enterprise' && (
-                    <a
-                      href={`https://qr-menu.lemonsqueezy.com/checkout/buy/storefront?checkout[custom][org_id]=${activeOrgId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <Link
+                      to="/billing"
                       className="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors"
                     >
                       Upgrade Plan
-                    </a>
+                    </Link>
                   )}
                 </div>
               </div>
