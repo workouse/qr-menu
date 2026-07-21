@@ -70,6 +70,171 @@ async function verifyOwnership(c: any, type: 'org' | 'venue' | 'menu' | 'categor
  * Build one language block for the compiled customer menu.
  * Falls back to English (base) content when a translation is missing.
  */
+function renderHeaderSection(
+  headerConfig: any,
+  venueName: string,
+  subHeaderHtml: string,
+  logoUrl: string,
+  switcherButtons: string
+): string {
+  const showLogo = headerConfig.show_logo !== false && logoUrl;
+  const layout = headerConfig.layout ?? 'centered';
+  
+  let logoHtml = '';
+  if (showLogo) {
+    logoHtml = `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(venueName)} Logo" class="w-24 h-24 rounded-full border-4 border-white/20 object-cover shadow-lg hover:scale-105 transition-transform duration-300" />`;
+  }
+
+  let innerHtml = '';
+  
+  if (layout === 'centered-circular' && headerConfig.circular_text) {
+    innerHtml = `
+      <div class="relative w-40 h-40 flex items-center justify-center mb-4">
+        <svg class="absolute w-full h-full animate-[spin_25s_linear_infinite] hover:[animation-play-state:paused]" viewBox="0 0 100 100">
+          <path id="circlePath" d="M 50,50 m -38,0 a 38,38 0 1,1 76,0 a 38,38 0 1,1 -76,0" fill="none" />
+          <text class="text-[6.5px] uppercase tracking-[0.14em] font-bold fill-white/80">
+            <textPath href="#circlePath" startOffset="50%" text-anchor="middle">
+              ${escapeHtml(headerConfig.circular_text)}
+            </textPath>
+          </text>
+        </svg>
+        <div class="w-24 h-24 rounded-full overflow-hidden border-4 border-white/20 shadow-lg">
+          ${logoHtml ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(venueName)}" class="w-full h-full object-cover" />` : `<div class="w-full h-full bg-white/10 flex items-center justify-center"><span class="text-xl font-bold">★</span></div>`}
+        </div>
+      </div>
+      <h1 class="text-3xl font-black tracking-tight">${escapeHtml(venueName)}</h1>
+    `;
+  } else if (layout === 'centered') {
+    innerHtml = `
+      ${logoHtml ? `<div class="mb-4">${logoHtml}</div>` : ''}
+      <h1 class="text-3xl font-black tracking-tight">${escapeHtml(venueName)}</h1>
+    `;
+  } else if (layout === 'left-aligned') {
+    innerHtml = `
+      <div class="flex items-center gap-4 w-full">
+        ${logoHtml ? `<div class="shrink-0">${logoHtml}</div>` : ''}
+        <div class="text-left">
+          <h1 class="text-3xl font-black tracking-tight">${escapeHtml(venueName)}</h1>
+          ${subHeaderHtml ? `<div class="text-white/80 text-sm mt-0.5">${subHeaderHtml}</div>` : ''}
+        </div>
+      </div>
+    `;
+  } else if (layout === 'banner' && headerConfig.banner_url) {
+    return `
+      <div class="relative w-full rounded-t-2xl overflow-hidden shadow-md">
+        <img src="${escapeHtml(headerConfig.banner_url)}" alt="${escapeHtml(venueName)} Banner" class="w-full h-48 object-cover" />
+        <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-6 text-white">
+          <div class="flex items-end gap-4">
+            ${logoHtml ? `<div class="shrink-0 -mb-2 border-2 border-white rounded-full overflow-hidden w-16 h-16 shadow-lg"><img src="${escapeHtml(logoUrl)}" alt="Logo" class="w-full h-full object-cover" /></div>` : ''}
+            <div>
+              <h1 class="text-2xl font-black tracking-tight">${escapeHtml(venueName)}</h1>
+              ${subHeaderHtml ? `<div class="text-white/85 text-xs">${subHeaderHtml}</div>` : ''}
+            </div>
+          </div>
+          <div class="flex justify-start gap-2 mt-4 flex-wrap">
+            ${switcherButtons}
+          </div>
+        </div>
+      </div>
+    `;
+  } else {
+    innerHtml = `
+      ${logoHtml ? `<div class="mb-4">${logoHtml}</div>` : ''}
+      <h1 class="text-3xl font-black tracking-tight">${escapeHtml(venueName)}</h1>
+    `;
+  }
+
+  return `
+    <div class="bg-primary px-8 py-10 text-white rounded-t-2xl flex flex-col items-center justify-center relative overflow-hidden shadow-md">
+      <div class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none"></div>
+      ${innerHtml}
+      ${layout !== 'left-aligned' && subHeaderHtml ? subHeaderHtml : ''}
+      <div class="flex justify-center gap-2 mt-5 flex-wrap">
+        ${switcherButtons}
+      </div>
+    </div>
+  `;
+}
+
+function renderFooterSection(
+  footerConfig: any,
+  venue: any,
+  venueName: string
+): string {
+  const showSocials = footerConfig.show_socials !== false;
+  const showContact = footerConfig.show_contact !== false;
+  
+  const hasSocials = showSocials && (venue.website || venue.facebook || venue.instagram || venue.twitter);
+  const hasContact = showContact && (venue.phone || venue.address || venue.email);
+
+  if (!hasSocials && !hasContact) {
+    return '';
+  }
+
+  let html = '';
+  const footerStyle = footerConfig.footer_style ?? 'classic';
+  const bgClass = footerStyle === 'clean-paper' 
+    ? 'bg-[#faf6ee]/60 border-t border-dashed border-gray-300' 
+    : 'bg-white border border-gray-100 shadow-sm';
+
+  html += `<div class="${bgClass} rounded-2xl p-8 mt-6 text-center space-y-6">`;
+
+  if (hasSocials) {
+    html += `<div class="flex justify-center items-center gap-4">`;
+    if (venue.website) {
+      html += `<a href="${escapeHtml(venue.website)}" target="_blank" class="p-3 bg-gray-50 text-gray-600 hover:text-primary hover:bg-primary/5 rounded-full transition-all duration-300" title="Website">
+        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.53c-.26-.81-1-1.4-1.9-1.4h-1v-3c0-.55-.45-1-1-1h-6v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.4z"/></svg>
+      </a>`;
+    }
+    if (venue.instagram) {
+      html += `<a href="${escapeHtml(venue.instagram)}" target="_blank" class="p-3 bg-gray-50 text-gray-600 hover:text-primary hover:bg-primary/5 rounded-full transition-all duration-300" title="Instagram">
+        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
+      </a>`;
+    }
+    if (venue.facebook) {
+      html += `<a href="${escapeHtml(venue.facebook)}" target="_blank" class="p-3 bg-gray-50 text-gray-600 hover:text-primary hover:bg-primary/5 rounded-full transition-all duration-300" title="Facebook">
+        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"/></svg>
+      </a>`;
+    }
+    if (venue.twitter) {
+      html += `<a href="${escapeHtml(venue.twitter)}" target="_blank" class="p-3 bg-gray-50 text-gray-600 hover:text-primary hover:bg-primary/5 rounded-full transition-all duration-300" title="Twitter">
+        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 0 1-2.825.775 4.958 4.958 0 0 0 2.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 0 0-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 0 0-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 0 1-2.228-.616v.06a4.923 4.923 0 0 0 3.946 4.827 4.996 4.996 0 0 1-2.212.085 4.936 4.936 0 0 0 4.604 3.417 9.867 9.867 0 0 1-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 0 0 7.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0 0 24 4.59z"/></svg>
+      </a>`;
+    }
+    html += `</div>`;
+  }
+
+  if (hasContact) {
+    html += `<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-gray-100">`;
+    if (venue.phone) {
+      html += `<a href="tel:${escapeHtml(venue.phone)}" class="flex items-center justify-center gap-2 p-3 bg-gray-50 hover:bg-primary/5 text-gray-700 hover:text-primary rounded-xl transition-all duration-300 font-semibold text-sm">
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+        Call Us
+      </a>`;
+    }
+    if (venue.email) {
+      html += `<a href="mailto:${escapeHtml(venue.email)}" class="flex items-center justify-center gap-2 p-3 bg-gray-50 hover:bg-primary/5 text-gray-700 hover:text-primary rounded-xl transition-all duration-300 font-semibold text-sm">
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+        Email Us
+      </a>`;
+    }
+    if (venue.address) {
+      html += `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address)}" target="_blank" class="flex items-center justify-center gap-2 p-3 bg-gray-50 hover:bg-primary/5 text-gray-700 hover:text-primary rounded-xl transition-all duration-300 font-semibold text-sm">
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        Find Us
+      </a>`;
+    }
+    html += `</div>`;
+
+    if (venue.address) {
+      html += `<p class="text-xs text-gray-500 mt-4">${escapeHtml(venue.address)}</p>`;
+    }
+  }
+
+  html += `</div>`;
+  return html;
+}
+
 function buildLangBlock(
   langCode: string,
   isDefault: boolean,
@@ -79,9 +244,11 @@ function buildLangBlock(
   itemsByCategory: Map<string, any[]>,
   catTranslations: Map<string, Map<string, { name: string }>>,
   itemTranslations: Map<string, Map<string, { name: string; description: string | null; ingredients: string | null }>>,
-  layoutStyle: string
+  sectionsConfig: any
 ): string {
   let html = `<div class="lang-block">`;
+  const navConfig = sectionsConfig?.category_nav ?? { style: 'sticky-tabs', show_category_images: true };
+  const listConfig = sectionsConfig?.item_list ?? { layout_style: 'list', desktop_columns: 1, show_item_images: true, show_calories: true, show_allergens: true };
 
   let totalCategories = 0;
   const allCategories: any[] = [];
@@ -118,9 +285,7 @@ function buildLangBlock(
     const catName = escapeHtml(catTr?.name ?? cat.name ?? '');
     html += `<a href="#cat-${cat.id}" class="whitespace-nowrap px-4 py-2 text-sm font-bold rounded-full border border-gray-200 bg-white text-gray-600 hover:border-primary/30 hover:text-primary hover:bg-primary/5 transition-all duration-300">${catName}</a>`;
   }
-  html += `</div>`;
-
-  const isTr = langCode === 'tr';
+  html += `</div>`;  const isTr = langCode === 'tr';
   const allergensLabel = isTr ? 'Alerjenler:' : 'Allergens:';
   const ingredientsLabel = isTr ? 'İçindekiler:' : 'Ingredients:';
 
@@ -137,37 +302,54 @@ function buildLangBlock(
     for (const cat of categories) {
       const catTr = catTranslations.get(cat.id)?.get(langCode);
       const catName = escapeHtml(catTr?.name ?? cat.name ?? '');
-      const coverImg = cat.cover_image_url
+      const coverImg = cat.cover_image_url && navConfig.show_category_images !== false
         ? `<img src="${escapeHtml(cat.cover_image_url)}" alt="${catName}" class="w-full h-40 object-cover" />`
         : '';
 
-      html += `<div id="cat-${cat.id}" class="mb-10 bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 scroll-mt-20">`;
-      html += coverImg;
-      html += `<div class="px-6 py-5">`;
-      html += `<h3 class="text-xl font-bold border-b pb-2 mb-4 text-gray-800">${catName}</h3>`;
+      if (listConfig.layout_style === 'retro-print') {
+        html += `<div id="cat-${cat.id}" class="mb-12 scroll-mt-20">`;
+        html += `<div class="text-center mb-8">`;
+        html += `<h3 class="text-2xl font-black text-gray-950 font-serif tracking-wide uppercase">${catName}</h3>`;
+        html += `
+          <div class="flex justify-center items-center gap-3 mt-2 text-gray-400">
+            <span class="w-1.5 h-1.5 rotate-45 border border-gray-400 bg-gray-400"></span>
+            <span class="w-16 h-[1px] bg-gray-300"></span>
+            <span class="w-1.5 h-1.5 rotate-45 border border-gray-400 bg-gray-400"></span>
+          </div>
+        `;
+        html += `</div>`;
+      } else {
+        html += `<div id="cat-${cat.id}" class="mb-10 bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 scroll-mt-20">`;
+        html += coverImg;
+        html += `<div class="px-6 py-5">`;
+        html += `<h3 class="text-xl font-bold border-b pb-2 mb-4 text-gray-800">${catName}</h3>`;
+      }
 
       const items = itemsByCategory.get(cat.id) ?? [];
 
       if (items.length === 0) {
         html += `<p class="text-sm text-gray-400 italic">No items available in this category.</p>`;
       } else {
-        if (layoutStyle === 'cards') {
-          html += `<div class="grid grid-cols-1 sm:grid-cols-2 gap-6">`;
+        if (listConfig.layout_style === 'cards') {
+          const cols = listConfig.desktop_columns ?? 2;
+          const gridColsClass = cols === 3 ? 'sm:grid-cols-3' : cols === 2 ? 'sm:grid-cols-2' : 'grid-cols-1';
+          html += `<div class="grid grid-cols-1 ${gridColsClass} gap-6">`;
           for (const item of items) {
             const itemTr = itemTranslations.get(item.id)?.get(langCode);
             const itemName = escapeHtml(itemTr?.name ?? item.name ?? '');
             const itemDesc = itemTr?.description ?? item.description ?? '';
             const itemPrice = `${currencySymbol}${(Number(item.price) / 100).toFixed(2)}`;
-            const itemImg = item.image_url
-              ? `<div class="w-full h-48 overflow-hidden bg-gray-50"><img src="${escapeHtml(item.image_url)}" alt="${itemName}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" /></div>`
-              : '';
+            let itemImg = '';
+            if (listConfig.show_item_images !== false && item.image_url) {
+              itemImg = `<div class="w-full h-48 overflow-hidden bg-gray-50"><img src="${escapeHtml(item.image_url)}" alt="${itemName}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" /></div>`;
+            }
 
             let tagsHtml = '';
-            if (item.is_vegan === 1) tagsHtml += `<span class="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full" data-en="Vegan" data-tr="Vegan">Vegan</span> `;
-            if (item.is_gluten_free === 1) tagsHtml += `<span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded-full" data-en="Gluten-Free" data-tr="Glutensiz">Gluten-Free</span> `;
+            if (item.is_vegan === 1) tagsHtml += `<span class="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full font-sans">Vegan</span> `;
+            if (item.is_gluten_free === 1) tagsHtml += `<span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded-full font-sans">Gluten-Free</span> `;
             
             let allergensHtml = '';
-            if (item.allergens) {
+            if (listConfig.show_allergens !== false && item.allergens) {
               try {
                 const arr = JSON.parse(item.allergens);
                 if (arr.length > 0) {
@@ -177,26 +359,17 @@ function buildLangBlock(
             }
 
             let nutritionHtml = '';
-            if (item.calories != null || item.protein != null || item.carbohydrates != null || item.fat != null) {
-              nutritionHtml += `<div class="mt-2.5 flex flex-wrap gap-1.5 text-[10px]">`;
+            if (listConfig.show_calories !== false && (item.calories != null || item.protein != null || item.carbohydrates != null || item.fat != null)) {
+              nutritionHtml += `<div class="mt-2.5 flex flex-wrap gap-1.5 text-[10px] font-sans">`;
               if (item.calories != null) {
                 nutritionHtml += `<span class="inline-flex items-center gap-0.5 px-2 py-0.5 bg-red-50 text-red-700 rounded font-semibold border border-red-100/50">🔥 ${item.calories} kcal</span>`;
-              }
-              if (item.protein != null) {
-                nutritionHtml += `<span class="inline-flex items-center gap-0.5 px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded font-semibold border border-emerald-100/50">🥩 ${item.protein}g</span>`;
-              }
-              if (item.carbohydrates != null) {
-                nutritionHtml += `<span class="inline-flex items-center gap-0.5 px-2 py-0.5 bg-amber-50 text-amber-700 rounded font-semibold border border-amber-100/50">🍞 ${item.carbohydrates}g</span>`;
-              }
-              if (item.fat != null) {
-                nutritionHtml += `<span class="inline-flex items-center gap-0.5 px-2 py-0.5 bg-blue-50 text-blue-700 rounded font-semibold border border-blue-100/50">🥑 ${item.fat}g</span>`;
               }
               nutritionHtml += `</div>`;
             }
 
             const rawIngredients = itemTr?.ingredients ?? item.ingredients ?? '';
             const ingredientsHtml = rawIngredients
-              ? `<p class="text-[10px] text-gray-500 mt-1.5"><span class="font-semibold text-gray-700">${ingredientsLabel}</span> ${escapeHtml(rawIngredients)}</p>`
+              ? `<p class="text-[10px] text-gray-500 mt-1.5"><span class="font-semibold text-gray-700" data-en="Ingredients:" data-tr="İçindekiler:">${ingredientsLabel}</span> ${escapeHtml(rawIngredients)}</p>`
               : '';
 
             html += `
@@ -221,24 +394,83 @@ function buildLangBlock(
               </div>`;
           }
           html += `</div>`;
+        } else if (listConfig.layout_style === 'retro-print') {
+          html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">`;
+          for (const item of items) {
+            const itemTr = itemTranslations.get(item.id)?.get(langCode);
+            const itemName = escapeHtml(itemTr?.name ?? item.name ?? '');
+            const itemDesc = itemTr?.description ?? item.description ?? '';
+            const itemPrice = `${currencySymbol}${(Number(item.price) / 100).toFixed(2)}`;
+            let itemImg = '';
+            if (listConfig.show_item_images !== false && item.image_url) {
+              itemImg = `<img src="${escapeHtml(item.image_url)}" alt="${itemName}" class="w-20 h-20 object-cover rounded-xl shrink-0 border border-gray-200/50 shadow-sm" />`;
+            }
+
+            let tagsHtml = '';
+            if (item.is_vegan === 1) tagsHtml += `<span class="px-2 py-0.5 bg-green-50 text-green-700 text-[10px] font-bold rounded-full font-sans">Vegan</span> `;
+            if (item.is_gluten_free === 1) tagsHtml += `<span class="px-2 py-0.5 bg-yellow-50 text-yellow-700 text-[10px] font-bold rounded-full font-sans">Gluten-Free</span> `;
+            
+            let allergensHtml = '';
+            if (listConfig.show_allergens !== false && item.allergens) {
+              try {
+                const arr = JSON.parse(item.allergens);
+                if (arr.length > 0) {
+                  allergensHtml = `<p class="text-[10px] text-gray-500 mt-1"><span class="font-semibold" data-en="Allergens:" data-tr="Alerjenler:">${allergensLabel}</span> ${escapeHtml(arr.join(', '))}</p>`;
+                }
+              } catch (e) {}
+            }
+
+            let nutritionHtml = '';
+            if (listConfig.show_calories !== false && (item.calories != null || item.protein != null || item.carbohydrates != null || item.fat != null)) {
+              nutritionHtml += `<div class="mt-2 flex flex-wrap gap-1 text-[10px] font-sans">`;
+              if (item.calories != null) {
+                nutritionHtml += `<span class="inline-flex items-center px-1.5 py-0.5 bg-red-50 text-red-700 rounded font-semibold">🔥 ${item.calories} kcal</span>`;
+              }
+              nutritionHtml += `</div>`;
+            }
+
+            const rawIngredients = itemTr?.ingredients ?? item.ingredients ?? '';
+            const ingredientsHtml = rawIngredients
+              ? `<p class="text-[10px] text-gray-500 mt-1"><span class="font-semibold" data-en="Ingredients:" data-tr="İçindekiler:">${ingredientsLabel}</span> ${escapeHtml(rawIngredients)}</p>`
+              : '';
+
+            html += `
+              <div class="flex items-start gap-4 item-card" data-is-vegan="${item.is_vegan === 1}" data-is-gluten-free="${item.is_gluten_free === 1}">
+                ${itemImg}
+                <div class="flex-1 min-w-0">
+                  <div class="flex justify-between items-baseline gap-2">
+                    <span class="font-bold text-gray-900 font-serif text-base item-name">${itemName}</span>
+                    <span class="flex-grow border-b border-dashed border-gray-300 mx-1"></span>
+                    <span class="font-black text-gray-950 font-serif text-base shrink-0">${itemPrice}</span>
+                  </div>
+                  ${tagsHtml ? `<div class="flex flex-wrap gap-1 mt-1.5">${tagsHtml}</div>` : ''}
+                  ${itemDesc ? `<p class="text-sm text-gray-600 mt-1 italic font-serif leading-relaxed item-desc">${escapeHtml(itemDesc)}</p>` : ''}
+                  ${nutritionHtml}
+                  ${ingredientsHtml}
+                  ${allergensHtml}
+                  ${item.is_available === 0 ? `<span class="inline-block mt-2 text-[10px] bg-red-50 text-red-600 font-semibold px-2 py-0.5 rounded-full font-sans">Out of stock</span>` : ''}
+                </div>
+              </div>`;
+          }
+          html += `</div>`;
         } else {
-          // List layout
           html += `<ul class="space-y-4">`;
           for (const item of items) {
             const itemTr = itemTranslations.get(item.id)?.get(langCode);
             const itemName = escapeHtml(itemTr?.name ?? item.name ?? '');
             const itemDesc = itemTr?.description ?? item.description ?? '';
             const itemPrice = `${currencySymbol}${(Number(item.price) / 100).toFixed(2)}`;
-            const itemImg = item.image_url
-              ? `<img src="${escapeHtml(item.image_url)}" alt="${itemName}" class="w-20 h-20 object-cover rounded-xl flex-shrink-0" />`
-              : '';
+            let itemImg = '';
+            if (listConfig.show_item_images !== false && item.image_url) {
+              itemImg = `<img src="${escapeHtml(item.image_url)}" alt="${itemName}" class="w-20 h-20 object-cover rounded-xl shrink-0" />`;
+            }
 
             let tagsHtml = '';
-            if (item.is_vegan === 1) tagsHtml += `<span class="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full" data-en="Vegan" data-tr="Vegan">Vegan</span> `;
-            if (item.is_gluten_free === 1) tagsHtml += `<span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded-full" data-en="Gluten-Free" data-tr="Glutensiz">Gluten-Free</span> `;
+            if (item.is_vegan === 1) tagsHtml += `<span class="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-bold rounded-full font-sans">Vegan</span> `;
+            if (item.is_gluten_free === 1) tagsHtml += `<span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded-full font-sans">Gluten-Free</span> `;
             
             let allergensHtml = '';
-            if (item.allergens) {
+            if (listConfig.show_allergens !== false && item.allergens) {
               try {
                 const arr = JSON.parse(item.allergens);
                 if (arr.length > 0) {
@@ -248,26 +480,17 @@ function buildLangBlock(
             }
 
             let nutritionHtml = '';
-            if (item.calories != null || item.protein != null || item.carbohydrates != null || item.fat != null) {
-              nutritionHtml += `<div class="mt-2.5 flex flex-wrap gap-1.5 text-[10px]">`;
+            if (listConfig.show_calories !== false && (item.calories != null || item.protein != null || item.carbohydrates != null || item.fat != null)) {
+              nutritionHtml += `<div class="mt-2.5 flex flex-wrap gap-1.5 text-[10px] font-sans">`;
               if (item.calories != null) {
                 nutritionHtml += `<span class="inline-flex items-center gap-0.5 px-2 py-0.5 bg-red-50 text-red-700 rounded font-semibold border border-red-100/50">🔥 ${item.calories} kcal</span>`;
-              }
-              if (item.protein != null) {
-                nutritionHtml += `<span class="inline-flex items-center gap-0.5 px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded font-semibold border border-emerald-100/50">🥩 ${item.protein}g</span>`;
-              }
-              if (item.carbohydrates != null) {
-                nutritionHtml += `<span class="inline-flex items-center gap-0.5 px-2 py-0.5 bg-amber-50 text-amber-700 rounded font-semibold border border-amber-100/50">🍞 ${item.carbohydrates}g</span>`;
-              }
-              if (item.fat != null) {
-                nutritionHtml += `<span class="inline-flex items-center gap-0.5 px-2 py-0.5 bg-blue-50 text-blue-700 rounded font-semibold border border-blue-100/50">🥑 ${item.fat}g</span>`;
               }
               nutritionHtml += `</div>`;
             }
 
             const rawIngredients = itemTr?.ingredients ?? item.ingredients ?? '';
             const ingredientsHtml = rawIngredients
-              ? `<p class="text-[10px] text-gray-500 mt-1.5"><span class="font-semibold text-gray-700">${ingredientsLabel}</span> ${escapeHtml(rawIngredients)}</p>`
+              ? `<p class="text-[10px] text-gray-500 mt-1.5"><span class="font-semibold text-gray-700" data-en="Ingredients:" data-tr="İçindekiler:">${ingredientsLabel}</span> ${escapeHtml(rawIngredients)}</p>`
               : '';
 
             html += `
@@ -290,7 +513,11 @@ function buildLangBlock(
         }
       }
 
-      html += `</div></div>`;
+      if (listConfig.layout_style === 'retro-print') {
+        html += `</div>`;
+      } else {
+        html += `</div></div>`;
+      }
     }
   }
 
@@ -388,7 +615,7 @@ async function checkTierLimits(c: any, orgId: string, type: 'venue' | 'menu' | '
   return true;
 }
 
-app.post('/api/webhooks/lemonsqueezy', async (c) => {
+const handleLemonSqueezy = async (c: any) => {
   const secret = c.env.LEMON_SQUEEZY_WEBHOOK_SECRET;
   const signature = c.req.header('X-Signature');
   if (!signature || !secret) return c.json({ error: 'Missing signature or secret' }, 401);
@@ -444,7 +671,10 @@ app.post('/api/webhooks/lemonsqueezy', async (c) => {
   }
 
   return c.json({ success: true }, 200);
-});
+};
+
+app.post('/webhooks/lemonsqueezy', handleLemonSqueezy);
+app.post('/api/webhooks/lemonsqueezy', handleLemonSqueezy);
 
 app.use('/*', cors());
 app.use('/api/*', requireAuth());
@@ -478,6 +708,115 @@ app.get('/api/me', async (c) => {
     needs_onboarding: false
   });
 });
+
+app.get('/api/profile', async (c) => {
+  const userPayload = c.get('user') as UserPayload;
+  
+  try {
+    const auth0Mgmt = new Auth0ManagementClient({
+      AUTH0_DOMAIN: c.env.AUTH0_DOMAIN,
+      AUTH0_M2M_CLIENT_ID: c.env.AUTH0_M2M_CLIENT_ID,
+      AUTH0_M2M_CLIENT_SECRET: c.env.AUTH0_M2M_CLIENT_SECRET,
+    });
+    
+    const auth0User = await auth0Mgmt.getUser(userPayload.id);
+    const isOauth = !userPayload.id.startsWith('auth0|') && !userPayload.id.startsWith('test_');
+    
+    return c.json({
+      id: userPayload.id,
+      email: auth0User.email || '',
+      name: auth0User.name || '',
+      phone: auth0User.user_metadata?.phone || auth0User.phone_number || '',
+      is_oauth: isOauth
+    });
+  } catch (err: any) {
+    console.error('Failed to fetch profile:', err);
+    const user = await c.env.DB.prepare('SELECT email FROM users WHERE id = ?').bind(userPayload.id).first() as any;
+    return c.json({
+      id: userPayload.id,
+      email: user?.email || '',
+      name: '',
+      phone: '',
+      is_oauth: !userPayload.id.startsWith('auth0|') && !userPayload.id.startsWith('test_')
+    });
+  }
+});
+
+app.patch('/api/profile', async (c) => {
+  const userPayload = c.get('user') as UserPayload;
+  const body = await c.req.json();
+  const isOauth = !userPayload.id.startsWith('auth0|') && !userPayload.id.startsWith('test_');
+
+  if (isOauth && (body.email !== undefined || body.password !== undefined)) {
+    return c.json({ error: 'Email and password updates are not supported for social login users' }, 400);
+  }
+
+  try {
+    const auth0Mgmt = new Auth0ManagementClient({
+      AUTH0_DOMAIN: c.env.AUTH0_DOMAIN,
+      AUTH0_M2M_CLIENT_ID: c.env.AUTH0_M2M_CLIENT_ID,
+      AUTH0_M2M_CLIENT_SECRET: c.env.AUTH0_M2M_CLIENT_SECRET,
+    });
+
+    const updateData: any = {};
+    if (body.name !== undefined) {
+      updateData.name = body.name;
+    }
+    if (body.phone !== undefined) {
+      updateData.user_metadata = { phone: body.phone };
+    }
+    if (body.email !== undefined) {
+      updateData.email = body.email;
+    }
+    if (body.password !== undefined && body.password.trim() !== '') {
+      updateData.password = body.password;
+    }
+
+    await auth0Mgmt.updateUser(userPayload.id, updateData);
+
+    if (body.email !== undefined) {
+      await c.env.DB.prepare('UPDATE users SET email = ? WHERE id = ?')
+        .bind(body.email, userPayload.id)
+        .run();
+    }
+
+    return c.json({ success: true });
+  } catch (err: any) {
+    console.error('Failed to update profile:', err);
+    return c.json({ error: err.message || 'Failed to update profile' }, 500);
+  }
+});
+
+app.get('/api/stats', async (c) => {
+  const userPayload = c.get('user') as UserPayload & { org_id?: string | null };
+  if (!userPayload.org_id) {
+    const dbUser = await c.env.DB.prepare('SELECT org_id FROM users WHERE id = ?').bind(userPayload.id).first() as { org_id: string | null } | undefined;
+    userPayload.org_id = dbUser?.org_id;
+  }
+  
+  if (!userPayload.org_id) {
+    return c.json({ error: 'No active organization found' }, 400);
+  }
+
+  const orgId = userPayload.org_id;
+
+  const venueCount = await c.env.DB.prepare('SELECT COUNT(*) as count FROM venues WHERE org_id = ?').bind(orgId).first() as { count: number };
+  const menuCount = await c.env.DB.prepare('SELECT COUNT(*) as count FROM menus m JOIN venues v ON m.venue_id = v.id WHERE v.org_id = ?').bind(orgId).first() as { count: number };
+  const categoryCount = await c.env.DB.prepare('SELECT COUNT(*) as count FROM categories c JOIN menus m ON c.menu_id = m.id JOIN venues v ON m.venue_id = v.id WHERE v.org_id = ?').bind(orgId).first() as { count: number };
+  const itemCount = await c.env.DB.prepare('SELECT COUNT(*) as count FROM items i JOIN categories c ON i.category_id = c.id JOIN menus m ON c.menu_id = m.id JOIN venues v ON m.venue_id = v.id WHERE v.org_id = ?').bind(orgId).first() as { count: number };
+
+  const sub = await c.env.DB.prepare('SELECT tier, status FROM subscriptions WHERE org_id = ?').bind(orgId).first() as { tier: string, status: string } | null;
+  const plan = (sub?.status === 'active' || sub?.status === 'on_trial') ? (sub?.tier || 'Free') : 'Free';
+
+  return c.json({
+    venues: venueCount?.count || 0,
+    menus: menuCount?.count || 0,
+    categories: categoryCount?.count || 0,
+    items: itemCount?.count || 0,
+    plan
+  });
+});
+
 
 // ---------------------------------------------------------------------------
 // Organisations
@@ -916,6 +1255,8 @@ app.patch('/api/venues/:venue_id', requireRole('org_owner'), async (c) => {
   const themeFont = typeof body.theme_font === 'string' ? body.theme_font : existing.theme_font;
   const layoutStyle = typeof body.layout_style === 'string' ? body.layout_style : existing.layout_style;
   const countryCode = typeof body.country_code === 'string' ? body.country_code.trim().toUpperCase() : existing.country_code;
+  const layoutTemplate = typeof body.layout_template === 'string' ? body.layout_template : existing.layout_template;
+  const themeConfig = typeof body.theme_config === 'string' ? body.theme_config : existing.theme_config;
 
   let customDomain = existing.custom_domain;
   let customDomainVerified = existing.custom_domain_verified;
@@ -956,7 +1297,9 @@ app.patch('/api/venues/:venue_id', requireRole('org_owner'), async (c) => {
         country_code = ?,
         custom_domain = ?,
         custom_domain_verified = ?,
-        domain_verification_token = ?
+        domain_verification_token = ?,
+        layout_template = ?,
+        theme_config = ?
     WHERE id = ?
   `).bind(
     name,
@@ -979,6 +1322,8 @@ app.patch('/api/venues/:venue_id', requireRole('org_owner'), async (c) => {
     customDomain,
     customDomainVerified,
     domainVerificationToken,
+    layoutTemplate,
+    themeConfig,
     venueId
   ).run();
 
@@ -1213,95 +1558,90 @@ app.post('/api/venues/:venue_id/compile', requireRole(['org_owner', 'org_staff']
   const venueName = escapeHtml(venue.name ?? '');
   const showSubHeader = menus.length === 1 && menus[0].name;
   const subHeaderHtml = showSubHeader ? `<p class="text-center text-white/80 mt-2 font-medium">${escapeHtml(menus[0].name)}</p>` : '';
+  const seoTitle = `${venueName} Menu`;
+  const seoDesc = `View the full online digital menu of ${venueName}. Browse menu categories, items, live prices, and availability.`;
+
+  // Parse theme_config JSON
+  let config: any = null;
+  if (venue.theme_config) {
+    try {
+      config = JSON.parse(venue.theme_config);
+    } catch (e) {
+      console.error('Failed to parse theme_config, falling back to legacy defaults', e);
+    }
+  }
+
+  if (!config) {
+    config = {
+      global: {
+        primary_color: venue.primary_color ?? '#4f46e5',
+        accent_color: venue.accent_color ?? '#312e81',
+        background_color: venue.background_color ?? '#f3f4f6',
+        background_texture: 'none',
+        font_family: venue.theme_font === 'serif' ? 'Playfair Display' : venue.theme_font === 'rounded' ? 'Outfit' : venue.theme_font === 'modern' ? 'Poppins' : 'Inter',
+        custom_css: ''
+      },
+      sections: {
+        header: {
+          layout: 'centered',
+          show_logo: true,
+          show_banner: false,
+          circular_text: ''
+        },
+        category_nav: {
+          style: 'sticky-tabs',
+          show_category_images: true
+        },
+        item_list: {
+          layout_style: venue.layout_style ?? 'list',
+          desktop_columns: venue.layout_style === 'cards' ? 2 : 1,
+          show_item_images: true,
+          show_calories: true,
+          show_allergens: true
+        },
+        footer: {
+          show_socials: true,
+          show_contact: true,
+          footer_style: 'classic'
+        }
+      }
+    };
+  }
 
   // Font family mappings
   let fontLink = '';
-  let fontFamilyName = 'Inter';
-  const themeFont = venue.theme_font ?? 'sans';
-  if (themeFont === 'serif') {
+  let fontFamilyName = "'Inter'";
+  const fontFamilyValue = config.global.font_family ?? 'Inter';
+  if (fontFamilyValue === 'Playfair Display') {
     fontLink = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">';
-    fontFamilyName = "'Playfair Display'";
-  } else if (themeFont === 'rounded') {
+    fontFamilyName = "'Playfair Display', serif";
+  } else if (fontFamilyValue === 'Outfit') {
     fontLink = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet">';
-    fontFamilyName = "'Outfit'";
-  } else if (themeFont === 'modern') {
+    fontFamilyName = "'Outfit', sans-serif";
+  } else if (fontFamilyValue === 'Poppins') {
     fontLink = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">';
-    fontFamilyName = "'Poppins'";
+    fontFamilyName = "'Poppins', sans-serif";
+  } else if (fontFamilyValue === 'Cormorant Garamond') {
+    fontLink = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">';
+    fontFamilyName = "'Cormorant Garamond', serif";
+  } else if (fontFamilyValue === 'Caveat') {
+    fontLink = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">';
+    fontFamilyName = "'Caveat', cursive";
   } else {
     fontLink = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">';
-    fontFamilyName = "'Inter'";
+    fontFamilyName = "'Inter', sans-serif";
   }
 
-  // Logo html
-  const logoHtml = venue.logo_url
-    ? `<img src="${escapeHtml(venue.logo_url)}" alt="${venueName} Logo" class="w-24 h-24 rounded-full border-4 border-white/20 object-cover shadow-lg mb-4 hover:scale-105 transition-transform duration-300" />`
-    : '';
-
-  // Footer compilation
-  let footerHtml = '';
-  const hasSocials = venue.website || venue.facebook || venue.instagram || venue.twitter;
-  const hasContact = venue.phone || venue.address || venue.email;
-
-  if (hasSocials || hasContact) {
-    footerHtml += `<div class="bg-white rounded-2xl border border-gray-100 p-8 mt-6 shadow-sm text-center space-y-6">`;
-
-    if (hasSocials) {
-      footerHtml += `<div class="flex justify-center items-center gap-4">`;
-      if (venue.website) {
-        footerHtml += `<a href="${escapeHtml(venue.website)}" target="_blank" class="p-3 bg-gray-50 text-gray-600 hover:text-primary hover:bg-primary/5 rounded-full transition-all duration-300" title="Website">
-          <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.53c-.26-.81-1-1.4-1.9-1.4h-1v-3c0-.55-.45-1-1-1h-6v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.4z"/></svg>
-        </a>`;
-      }
-      if (venue.instagram) {
-        footerHtml += `<a href="${escapeHtml(venue.instagram)}" target="_blank" class="p-3 bg-gray-50 text-gray-600 hover:text-primary hover:bg-primary/5 rounded-full transition-all duration-300" title="Instagram">
-          <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>
-        </a>`;
-      }
-      if (venue.facebook) {
-        footerHtml += `<a href="${escapeHtml(venue.facebook)}" target="_blank" class="p-3 bg-gray-50 text-gray-600 hover:text-primary hover:bg-primary/5 rounded-full transition-all duration-300" title="Facebook">
-          <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"/></svg>
-        </a>`;
-      }
-      if (venue.twitter) {
-        footerHtml += `<a href="${escapeHtml(venue.twitter)}" target="_blank" class="p-3 bg-gray-50 text-gray-600 hover:text-primary hover:bg-primary/5 rounded-full transition-all duration-300" title="Twitter">
-          <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 0 1-2.825.775 4.958 4.958 0 0 0 2.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 0 0-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 0 0-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 0 1-2.228-.616v.06a4.923 4.923 0 0 0 3.946 4.827 4.996 4.996 0 0 1-2.212.085 4.936 4.936 0 0 0 4.604 3.417 9.867 9.867 0 0 1-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 0 0 7.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0 0 24 4.59z"/></svg>
-        </a>`;
-      }
-      footerHtml += `</div>`;
-    }
-
-    if (hasContact) {
-      footerHtml += `<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-gray-100">`;
-      if (venue.phone) {
-        footerHtml += `<a href="tel:${escapeHtml(venue.phone)}" class="flex items-center justify-center gap-2 p-3 bg-gray-50 hover:bg-primary/5 text-gray-700 hover:text-primary rounded-xl transition-all duration-300 font-semibold text-sm">
-          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
-          Call Us
-        </a>`;
-      }
-      if (venue.email) {
-        footerHtml += `<a href="mailto:${escapeHtml(venue.email)}" class="flex items-center justify-center gap-2 p-3 bg-gray-50 hover:bg-primary/5 text-gray-700 hover:text-primary rounded-xl transition-all duration-300 font-semibold text-sm">
-          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-          Email Us
-        </a>`;
-      }
-      if (venue.address) {
-        footerHtml += `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address)}" target="_blank" class="flex items-center justify-center gap-2 p-3 bg-gray-50 hover:bg-primary/5 text-gray-700 hover:text-primary rounded-xl transition-all duration-300 font-semibold text-sm">
-          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-          Find Us
-        </a>`;
-      }
-      footerHtml += `</div>`;
-
-      if (venue.address) {
-        footerHtml += `<p class="text-xs text-gray-400 mt-4">${escapeHtml(venue.address)}</p>`;
-      }
-    }
-
-    footerHtml += `</div>`;
+  // Background pattern configuration
+  let backgroundStyleStr = '';
+  const texture = config.global.background_texture ?? 'none';
+  if (texture === 'paper') {
+    backgroundStyleStr = `background-color: #faf6ee; background-image: radial-gradient(rgba(0,0,0,0.03) 1px, transparent 0); background-size: 24px 24px;`;
+  } else if (texture === 'grid') {
+    backgroundStyleStr = `background-color: #ffffff; background-image: linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px); background-size: 20px 20px;`;
+  } else {
+    backgroundStyleStr = `background-color: var(--background);`;
   }
-
-  const seoTitle = `${venueName} Menu`;
-  const seoDesc = `View the full online digital menu of ${venueName}. Browse menu categories, items, live prices, and availability.`;
 
   for (let i = 0; i < sortedLangs.length; i++) {
     const lang = sortedLangs[i];
@@ -1318,7 +1658,7 @@ app.post('/api/venues/:venue_id/compile', requireRole(['org_owner', 'org_staff']
         itemsByCategory,
         catTranslations,
         itemTranslations,
-        venue.layout_style ?? 'list'
+        config.sections
       );
     }
 
@@ -1327,6 +1667,20 @@ app.post('/api/venues/:venue_id/compile', requireRole(['org_owner', 'org_staff']
       `class="lang-btn px-4 py-1.5 rounded-full text-sm font-bold transition-all duration-300 ${l.language_code === lang.language_code ? 'bg-white text-primary shadow-sm' : 'text-white/80 hover:text-white hover:bg-white/10'}"` +
       `>${escapeHtml(l.language_name)}</a>`
     ).join('');
+
+    const headerHtml = renderHeaderSection(
+      config.sections.header ?? { layout: 'centered', show_logo: true },
+      venueName,
+      subHeaderHtml,
+      venue.logo_url,
+      switcherButtons
+    );
+
+    const footerHtml = renderFooterSection(
+      config.sections.footer ?? { show_socials: true, show_contact: true },
+      venue,
+      venueName
+    );
 
     const html = `<!DOCTYPE html>
 <html lang="${escapeHtml(lang.language_code)}">
@@ -1365,9 +1719,9 @@ app.post('/api/venues/:venue_id/compile', requireRole(['org_owner', 'org_staff']
   <!-- Inline Compiled CSS Stylesheet -->
   <style>
     :root {
-      --primary: ${venue.primary_color ?? '#4f46e5'};
-      --accent: ${venue.accent_color ?? '#312e81'};
-      --background: ${venue.background_color ?? '#f3f4f6'};
+      --primary: ${config.global.primary_color ?? '#4f46e5'};
+      --accent: ${config.global.accent_color ?? '#312e81'};
+      --background: ${config.global.background_color ?? '#f3f4f6'};
     }
     body {
       font-family: ${fontFamilyName}, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -1380,6 +1734,7 @@ app.post('/api/venues/:venue_id/compile', requireRole(['org_owner', 'org_staff']
       scrollbar-width: none;
     }
     ${MENU_CSS}
+    ${config.global.custom_css ?? ''}
   </style>
 
   <!-- Structured Data JSON-LD Schema -->
@@ -1387,19 +1742,11 @@ app.post('/api/venues/:venue_id/compile', requireRole(['org_owner', 'org_staff']
 ${jsonLdString}
   </script>
 </head>
-<body class="bg-background text-gray-900 min-h-screen p-4 md:p-8">
+<body class="bg-background text-gray-900 min-h-screen p-4 md:p-8" style="${backgroundStyleStr}">
   <div class="max-w-3xl mx-auto flex flex-col min-h-[calc(100vh-2rem)] justify-between">
     <div>
-      <div class="bg-primary px-8 py-10 text-white rounded-t-2xl flex flex-col items-center justify-center relative overflow-hidden shadow-md">
-        <div class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none"></div>
-        ${logoHtml}
-        <h1 class="text-3xl font-black tracking-tight">${venueName}</h1>
-        ${subHeaderHtml}
-        <div class="flex justify-center gap-2 mt-5 flex-wrap">
-          ${switcherButtons}
-        </div>
-      </div>
-      <div class="bg-background py-6 space-y-6" id="menu-content">
+      ${headerHtml}
+      <div class="bg-background py-6 space-y-6" id="menu-content" style="background: transparent;">
         ${contentHtml}
       </div>
     </div>

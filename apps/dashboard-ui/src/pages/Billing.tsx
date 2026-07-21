@@ -85,7 +85,9 @@ export const Billing = () => {
   }
 
   const subscription = org?.subscription;
-  const currentTier = subscription?.status === 'active' ? subscription.tier : 'Free';
+  const currentTier = (subscription?.status === 'active' || subscription?.status === 'on_trial')
+    ? (subscription.tier || 'Free')
+    : 'Free';
 
   return (
     <ErrorBoundary>
@@ -105,15 +107,15 @@ export const Billing = () => {
               <h2 className="text-lg font-medium text-gray-900">{t('current_plan', 'Current Plan')}</h2>
               <div className="mt-2 flex items-center space-x-3">
                 <span className="text-3xl font-extrabold text-indigo-600">{currentTier}</span>
-                {subscription?.status === 'active' && (
+                {(subscription?.status === 'active' || subscription?.status === 'on_trial') && (
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    Active
+                    {subscription?.status === 'on_trial' ? 'Trial' : 'Active'}
                   </span>
                 )}
               </div>
             </div>
             
-            {subscription?.status === 'active' && (
+            {(subscription?.status === 'active' || subscription?.status === 'on_trial') && (
               <button
                 onClick={handleManagePortal}
                 disabled={loadingPortal}
@@ -133,7 +135,7 @@ export const Billing = () => {
 
       {/* Billing Cycle Toggle */}
       <div className="flex justify-center items-center gap-3 bg-gray-50 p-3 rounded-xl border border-gray-100 max-w-sm mx-auto">
-        <span className={`text-sm font-semibold ${billingPeriod === 'monthly' ? 'text-indigo-600' : 'text-gray-500'}`}>Monthly</span>
+        <span className={`text-sm font-semibold ${billingPeriod === 'monthly' ? 'text-indigo-600' : 'text-gray-500'}`}>{t('monthly', 'Monthly')}</span>
         <button
           onClick={() => setBillingPeriod(billingPeriod === 'monthly' ? 'annually' : 'monthly')}
           className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${billingPeriod === 'annually' ? 'bg-indigo-600' : 'bg-gray-200'}`}
@@ -143,8 +145,8 @@ export const Billing = () => {
           />
         </button>
         <span className={`text-sm font-semibold flex items-center gap-1.5 ${billingPeriod === 'annually' ? 'text-indigo-600' : 'text-gray-500'}`}>
-          Annually
-          <span className="text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-bold">Save 15%+</span>
+          {t('annually', 'Annually')}
+          <span className="text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-bold">{t('save_15_percent', 'Save 15%+')}</span>
         </span>
       </div>
 
@@ -152,24 +154,24 @@ export const Billing = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Free Plan */}
         <div className={`bg-white rounded-xl shadow-sm border ${currentTier === 'Free' ? 'border-indigo-500 ring-2 ring-indigo-500 ring-opacity-50' : 'border-gray-200'} p-6 flex flex-col`}>
-          <h3 className="text-lg font-semibold text-gray-900">Free</h3>
-          <p className="mt-2 text-sm text-gray-500 flex-1">Perfect for trying out the platform.</p>
+          <h3 className="text-lg font-semibold text-gray-900">{t('free', 'Free')}</h3>
+          <p className="mt-2 text-sm text-gray-500 flex-1">{t('plan_free_desc', 'Perfect for trying out the platform.')}</p>
           <div className="mt-4">
             <span className="text-3xl font-extrabold text-gray-900">$0</span>
-            <span className="text-base font-medium text-gray-500">/mo</span>
+            <span className="text-base font-medium text-gray-500">/{billingPeriod === 'monthly' ? t('mo_short', 'mo') : t('yr_short', 'yr')}</span>
           </div>
           <ul className="mt-6 space-y-4">
-            <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">1 Venue</span></li>
-            <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">1 Menu</span></li>
-            <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">2 Categories</span></li>
-            <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">10 Items</span></li>
+            <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">{t('limit_1_venue', '1 Venue')}</span></li>
+            <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">{t('limit_1_menu', '1 Menu')}</span></li>
+            <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">{t('limit_2_categories', '2 Categories')}</span></li>
+            <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">{t('limit_10_items', '10 Items')}</span></li>
           </ul>
           <div className="mt-8">
             <button
               disabled={true}
               className={`w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium ${currentTier === 'Free' ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-100 text-gray-400'}`}
             >
-              {currentTier === 'Free' ? 'Current Plan' : 'Select'}
+              {currentTier === 'Free' ? t('current_plan', 'Current Plan') : t('select', 'Select')}
             </button>
           </div>
         </div>
@@ -181,21 +183,21 @@ export const Billing = () => {
               <Check className="h-3 w-3 text-white" />
             </div>
           )}
-          <h3 className="text-lg font-semibold text-gray-900">Standard</h3>
-          <p className="mt-2 text-sm text-gray-500 flex-1">Great for small businesses.</p>
+          <h3 className="text-lg font-semibold text-gray-900">{t('standard', 'Standard')}</h3>
+          <p className="mt-2 text-sm text-gray-500 flex-1">{t('plan_standard_desc', 'Great for small businesses.')}</p>
           <div className="mt-4">
             <span className="text-3xl font-extrabold text-gray-900">
               {billingPeriod === 'monthly' ? '$7' : '$70'}
             </span>
             <span className="text-base font-medium text-gray-500">
-              {billingPeriod === 'monthly' ? '/mo' : '/yr'}
+              {billingPeriod === 'monthly' ? '/' + t('mo_short', 'mo') : '/' + t('yr_short', 'yr')}
             </span>
           </div>
           <ul className="mt-6 space-y-4">
-            <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">5 Venues</span></li>
-            <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">2 Menus per Venue</span></li>
-            <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">30 Categories</span></li>
-            <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">20 Items per Category</span></li>
+            <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">{t('limit_5_venues', '5 Venues')}</span></li>
+            <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">{t('limit_2_menus', '2 Menus per Venue')}</span></li>
+            <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">{t('limit_30_categories', '30 Categories')}</span></li>
+            <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">{t('limit_20_items', '20 Items per Category')}</span></li>
           </ul>
           <div className="mt-8">
             <button
@@ -206,9 +208,9 @@ export const Billing = () => {
               {loadingCheckout === 'Standard' ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
               ) : currentTier === 'Standard' ? (
-                'Current Plan'
+                t('current_plan', 'Current Plan')
               ) : (
-                'Upgrade to Standard'
+                t('upgrade_to_plan', 'Upgrade to Standard', { plan: 'Standard' })
               )}
             </button>
           </div>
@@ -221,21 +223,21 @@ export const Billing = () => {
               <Check className="h-3 w-3 text-white" />
             </div>
           )}
-          <h3 className="text-lg font-semibold text-gray-900">Business</h3>
-          <p className="mt-2 text-sm text-gray-500 flex-1">For growing multi-location brands.</p>
+          <h3 className="text-lg font-semibold text-gray-900">{t('business', 'Business')}</h3>
+          <p className="mt-2 text-sm text-gray-500 flex-1">{t('plan_business_desc', 'For growing multi-location brands.')}</p>
           <div className="mt-4">
             <span className="text-3xl font-extrabold text-gray-900">
               {billingPeriod === 'monthly' ? '$15' : '$150'}
             </span>
             <span className="text-base font-medium text-gray-500">
-              {billingPeriod === 'monthly' ? '/mo' : '/yr'}
+              {billingPeriod === 'monthly' ? '/' + t('mo_short', 'mo') : '/' + t('yr_short', 'yr')}
             </span>
           </div>
           <ul className="mt-6 space-y-4">
-            <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">5 Venues</span></li>
-            <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">5 Menus per Venue</span></li>
-            <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">30 Categories</span></li>
-            <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">50 Items per Category</span></li>
+            <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">{t('limit_5_venues', '5 Venues')}</span></li>
+            <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">{t('limit_5_menus', '5 Menus per Venue')}</span></li>
+            <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">{t('limit_30_categories', '30 Categories')}</span></li>
+            <li className="flex space-x-3"><Check className="flex-shrink-0 h-5 w-5 text-green-500" /><span className="text-sm text-gray-500">{t('limit_50_items', '50 Items per Category')}</span></li>
           </ul>
           <div className="mt-8">
             <button
@@ -246,9 +248,9 @@ export const Billing = () => {
               {loadingCheckout === 'Business' ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
               ) : currentTier === 'Business' ? (
-                'Current Plan'
+                t('current_plan', 'Current Plan')
               ) : (
-                'Upgrade to Business'
+                t('upgrade_to_plan', 'Upgrade to Business', { plan: 'Business' })
               )}
             </button>
           </div>

@@ -12,6 +12,7 @@ import { ToggleSwitch } from '../components/ToggleSwitch';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useTierLimits } from '../hooks/useTierLimits';
+import { useTranslation } from 'react-i18next';
 
 const categorySchema = z.object({
   name: z.string().min(2, 'Category name is required'),
@@ -72,6 +73,7 @@ type ItemFormOutput = z.output<typeof itemSchema>;
 
 export const MenuBuilder = () => {
   const { getAccessTokenSilently } = useAuth0();
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [isAddingCategory, setIsAddingCategory] = useState(false);
@@ -182,8 +184,8 @@ export const MenuBuilder = () => {
 
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Menu Builder</h1>
-          {menu?.name && <p className="text-sm text-gray-500 mt-1">Managing: {menu.name}</p>}
+          <h1 className="text-2xl font-bold text-gray-900">{t('menu_builder')}</h1>
+          {menu?.name && <p className="text-sm text-gray-500 mt-1">{t('managing')}{menu.name}</p>}
         </div>
         <div className="flex items-center gap-2 self-start md:self-auto">
           {venue?.country_code === 'TR' && (
@@ -192,7 +194,7 @@ export const MenuBuilder = () => {
               className="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors cursor-pointer"
             >
               <Download size={18} className="mr-2" />
-              Export Prices (CSV)
+              {t('export_prices_csv', 'Export Prices (CSV)')}
             </button>
           )}
           {isCategoryLimitReached ? (
@@ -201,7 +203,7 @@ export const MenuBuilder = () => {
               className="flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-md transition-colors cursor-pointer font-medium text-sm shadow-sm"
             >
               <Plus size={18} className="mr-2" />
-              Upgrade to Add Category ({categoryCount}/{limits.categories})
+              {t('upgrade_to_add_category', { count: categoryCount, limit: limits.categories })}
             </Link>
           ) : (
             <button
@@ -209,7 +211,7 @@ export const MenuBuilder = () => {
               className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors cursor-pointer"
             >
               {isAddingCategory ? <X size={18} className="mr-2" /> : <Plus size={18} className="mr-2" />}
-              {isAddingCategory ? 'Cancel' : 'Add Category'}
+              {isAddingCategory ? t('cancel') : t('add_category')}
             </button>
           )}
         </div>
@@ -218,11 +220,11 @@ export const MenuBuilder = () => {
       {isCategoryLimitReached && (
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
-            <p className="font-bold">You've reached your category limit for this menu</p>
-            <p className="text-xs opacity-90">Your current plan ({tier}) allows up to {limits.categories} categories per menu. Upgrade to add more categories.</p>
+            <p className="font-bold">{t('limit_reached_category_title')}</p>
+            <p className="text-xs opacity-90">{t('limit_reached_category_desc', { tier, limit: limits.categories })}</p>
           </div>
           <Link to="/billing" className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm">
-            Upgrade Now
+            {t('upgrade_now')}
           </Link>
         </div>
       )}
@@ -474,6 +476,7 @@ const CategoryBlock = ({ category, menuId, allOrgLanguages, activeTabLanguage }:
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [showTranslations, setShowTranslations] = useState(false);
+  const { t } = useTranslation();
   
   // Category Edit state
   const [isEditingCategory, setIsEditingCategory] = useState(false);
@@ -743,10 +746,10 @@ const CategoryBlock = ({ category, menuId, allOrgLanguages, activeTabLanguage }:
               <Link 
                 to="/billing"
                 className="text-sm font-medium text-amber-600 hover:text-amber-800 flex items-center ml-1"
-                title={`Item limit reached (${itemCount}/${limits.items})`}
+                title={t('limit_reached_item_title', { count: itemCount, limit: limits.items })}
               >
                 <Plus size={16} className="mr-1" />
-                Upgrade to Add Item ({itemCount}/{limits.items})
+                {t('upgrade_to_add_item', { count: itemCount, limit: limits.items })}
               </Link>
             ) : (
               <button
@@ -754,7 +757,7 @@ const CategoryBlock = ({ category, menuId, allOrgLanguages, activeTabLanguage }:
                 className="text-sm font-medium text-indigo-600 hover:text-indigo-800 flex items-center ml-1"
               >
                 {isAddingItem ? <X size={16} className="mr-1" /> : <Plus size={16} className="mr-1" />}
-                {isAddingItem ? 'Cancel' : 'Add Item'}
+                {isAddingItem ? t('cancel') : t('add_item')}
               </button>
             )}
           </div>
@@ -763,15 +766,15 @@ const CategoryBlock = ({ category, menuId, allOrgLanguages, activeTabLanguage }:
 
       {isItemLimitReached && !isEditingCategory && (
         <div className="px-6 py-3 bg-amber-50 border-b border-amber-100 text-amber-900 text-xs flex justify-between items-center gap-2">
-          <span>You have reached the item limit ({itemCount}/{limits.items}) for this category. Upgrade your plan to add more items.</span>
-          <Link to="/billing" className="font-bold hover:underline text-amber-700">Upgrade Plan &rarr;</Link>
+          <span>{t('limit_reached_item_desc', { count: itemCount, limit: limits.items })}</span>
+          <Link to="/billing" className="font-bold hover:underline text-amber-700">{t('upgrade_now')} &rarr;</Link>
         </div>
       )}
 
       {/* Category translations panel */}
       {shouldShowTranslations && allOrgLanguages.length > 0 && !isEditingCategory && (
         <div className="px-6 py-4 bg-amber-50/50 border-b border-amber-100">
-          <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider mb-3">Category Translations</p>
+          <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider mb-3">{t('category_translations', 'Category Translations')}</p>
           <TranslationPanel
             type="category"
             entityId={category.id}

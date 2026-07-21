@@ -180,7 +180,7 @@ export const MenusList = () => {
               className="flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-md transition-colors font-medium text-sm shadow-sm cursor-pointer"
             >
               <Plus size={18} className="mr-2" />
-              Upgrade to Add Menu ({menuCount}/{limits.menus})
+              {t('upgrade_to_add_menu', { count: menuCount, limit: limits.menus })}
             </Link>
           ) : (
             <button 
@@ -197,11 +197,17 @@ export const MenusList = () => {
       {isLimitReached && (
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
-            <p className="font-bold">You've reached your menu limit for this venue</p>
-            <p className="text-xs opacity-90">Your current plan ({tier}) allows up to {limits.menus} {limits.menus === 1 ? 'menu' : 'menus'} per venue. Upgrade to add more menus.</p>
+            <p className="font-bold">{t('limit_reached_menu_title')}</p>
+            <p className="text-xs opacity-90">
+              {t('limit_reached_menu_desc', {
+                tier,
+                limit: limits.menus,
+                unit: limits.menus === 1 ? t('unit_menu_singular') : t('unit_menu_plural')
+              })}
+            </p>
           </div>
           <Link to="/billing" className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm">
-            Upgrade Now
+            {t('upgrade_now')}
           </Link>
         </div>
       )}
@@ -338,6 +344,8 @@ export const MenusList = () => {
           onClose={() => setIsQrModalOpen(false)}
           venueName={venue.name}
           venueSlug={venue.slug}
+          customDomain={venue.custom_domain}
+          customDomainVerified={venue.custom_domain_verified}
         />
       )}
     </div>

@@ -10,6 +10,7 @@ port = 8787
 binding = "DB"
 database_name = "qr-menu-db"
 database_id = "fa5eb8d3-7a19-4a40-8217-725100f65729"
+migrations_dir = "../../packages/db/migrations"
 
 [[kv_namespaces]]
 binding = "MENU_KV"

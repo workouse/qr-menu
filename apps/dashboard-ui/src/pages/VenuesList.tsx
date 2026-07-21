@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useTierLimits } from '../hooks/useTierLimits';
+import { getVenueUrl } from '../utils/domain';
 
 export const VenuesList = () => {
   const { getAccessTokenSilently } = useAuth0();
@@ -24,11 +25,17 @@ export const VenuesList = () => {
       {isLimitReached && (
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
-            <p className="font-bold">You've reached your venue limit</p>
-            <p className="text-xs opacity-90">Your current plan ({tier}) allows up to {limits.venues} {limits.venues === 1 ? 'venue' : 'venues'}. Upgrade your plan to manage more locations.</p>
+            <p className="font-bold">{t('limit_reached_venue_title')}</p>
+            <p className="text-xs opacity-90">
+              {t('limit_reached_venue_desc', {
+                tier,
+                limit: limits.venues,
+                unit: limits.venues === 1 ? t('unit_venue_singular') : t('unit_venue_plural')
+              })}
+            </p>
           </div>
           <Link to="/billing" className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm">
-            Upgrade Now
+            {t('upgrade_now')}
           </Link>
         </div>
       )}
@@ -41,7 +48,7 @@ export const VenuesList = () => {
             className="flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-md font-semibold transition-colors shadow-sm"
           >
             <Plus size={18} className="mr-2" />
-            Upgrade to Add Venue ({venueCount}/{limits.venues})
+            {t('upgrade_to_add_venue', { count: venueCount, limit: limits.venues })}
           </Link>
         ) : (
           <Link 
@@ -63,7 +70,14 @@ export const VenuesList = () => {
               {venues.map((venue: any) => (
                 <div key={venue.id} className="border border-gray-200 rounded-lg p-5 hover:shadow-md transition-shadow bg-gray-50">
                   <h3 className="text-lg font-bold text-gray-900 mb-1">{venue.name}</h3>
-                  <p className="text-sm text-gray-500 mb-4">qr-menu.com/{venue.slug}</p>
+                  <a 
+                    href={getVenueUrl(venue)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-indigo-600 hover:underline mb-4 block truncate font-medium"
+                  >
+                    {getVenueUrl(venue).replace(/^https?:\/\//, '')}
+                  </a>
                   
                   <Link 
                     to={`/venues/${venue.id}/menus`} 

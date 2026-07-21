@@ -245,7 +245,7 @@ export const Settings = () => {
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-6 py-5 border-b border-gray-100">
           <h2 className="text-base font-semibold text-gray-800">Billing & Subscription</h2>
-          <p className="text-sm text-gray-500 mt-0.5">Manage your active subscription plan and limits.</p>
+          <p className="text-sm text-gray-500 mt-0.5">{t('manage_subscription_and_limits')}</p>
         </div>
         <div className="p-6">
           {orgLoading ? (
@@ -276,40 +276,40 @@ export const Settings = () => {
                       to="/billing"
                       className="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors"
                     >
-                      Upgrade Plan
+                      {t('upgrade_plan', 'Upgrade Plan')}
                     </Link>
                   )}
                 </div>
               </div>
               <div className="text-sm text-gray-500 bg-blue-50/50 p-4 rounded-lg border border-blue-100">
-                <p className="font-semibold text-blue-800 mb-2">Usage Limits</p>
+                <p className="font-semibold text-blue-800 mb-2">{t('usage_limits', 'Usage Limits')}</p>
                 <ul className="list-disc list-inside space-y-1 text-blue-700/80">
                   {(!org?.subscription?.tier || org?.subscription?.tier === 'Free') && (
                     <>
-                      <li>1 Venue, 1 Menu per Venue</li>
-                      <li>2 Categories, 10 Items per Category</li>
-                      <li>1 Extra Language (No Custom Domain)</li>
-                      <li>1 Organization</li>
+                      <li>{t('limits_free_summary', '1 Venue, 1 Menu per Venue')}</li>
+                      <li>{t('limits_free_summary_items', '2 Categories, 10 Items per Category')}</li>
+                      <li>{t('limits_free_summary_lang', '1 Extra Language (No Custom Domain)')}</li>
+                      <li>{t('limits_free_summary_org', '1 Organization')}</li>
                     </>
                   )}
                   {org?.subscription?.tier === 'Standard' && (
                     <>
-                      <li>5 Venues, 2 Menus per Venue</li>
-                      <li>30 Categories, 20 Items per Category</li>
-                      <li>3 Extra Languages, Custom Domain allowed</li>
-                      <li>2 Organizations</li>
+                      <li>{t('limits_standard_summary', '5 Venues, 2 Menus per Venue')}</li>
+                      <li>{t('limits_standard_summary_items', '30 Categories, 20 Items per Category')}</li>
+                      <li>{t('limits_standard_summary_lang', '3 Extra Languages, Custom Domain allowed')}</li>
+                      <li>{t('limits_standard_summary_org', '2 Organizations')}</li>
                     </>
                   )}
                   {org?.subscription?.tier === 'Business' && (
                     <>
-                      <li>5 Venues per Org, 5 Menus per Venue</li>
-                      <li>30 Categories, 50 Items per Category</li>
-                      <li>10 Extra Languages, Custom Domain + Free Domain Registrar</li>
-                      <li>5 Organizations</li>
+                      <li>{t('limits_business_summary', '5 Venues per Org, 5 Menus per Venue')}</li>
+                      <li>{t('limits_business_summary_items', '30 Categories, 50 Items per Category')}</li>
+                      <li>{t('limits_business_summary_lang', '10 Extra Languages, Custom Domain + Free Domain Registrar')}</li>
+                      <li>{t('limits_business_summary_org', '5 Organizations')}</li>
                     </>
                   )}
                   {org?.subscription?.tier === 'Enterprise' && (
-                    <li>Unlimited usage across all limits.</li>
+                    <li>{t('unlimited_usage_limits')}</li>
                   )}
                 </ul>
               </div>
@@ -322,8 +322,8 @@ export const Settings = () => {
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         {isLanguageLimitReached && (
           <div className="p-4 bg-amber-50 border-b border-amber-200 text-amber-900 text-xs flex justify-between items-center gap-2">
-            <span>You have reached the language limit ({extraLanguagesCount}/{limits.languages} extra languages) for your current plan ({tier}).</span>
-            <Link to="/billing" className="font-bold hover:underline text-amber-700">Upgrade Plan &rarr;</Link>
+            <span>{t('limit_reached_language_desc', { count: extraLanguagesCount, limit: limits.languages, tier })}</span>
+            <Link to="/billing" className="font-bold hover:underline text-amber-700">{t('upgrade_now')} &rarr;</Link>
           </div>
         )}
         <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center">
@@ -340,7 +340,7 @@ export const Settings = () => {
               className="flex items-center gap-1 px-3 py-1.5 text-sm bg-amber-600 hover:bg-amber-750 text-white rounded-md transition-colors flex-shrink-0 ml-4 font-semibold shadow-sm"
             >
               <Plus size={14} />
-              Upgrade to Add Language ({extraLanguagesCount}/{limits.languages})
+              {t('upgrade_to_add_language', { count: extraLanguagesCount, limit: limits.languages })}
             </Link>
           ) : (
             <button

@@ -1,4 +1,4 @@
-.PHONY: dev build deploy test clean setup refresh-db compile-css
+.PHONY: dev build deploy test clean setup refresh-db remote-migrate compile-css
 
 setup:
 	direnv allow
@@ -28,7 +28,7 @@ compile-css:
 build: compile-css
 	pnpm --filter "*" run build
 
-deploy: build
+deploy: build remote-migrate
 	@echo "Deploying applications to production..."
 	@echo "Deploying dashboard API..."
 	(cd apps/dashboard && npx wrangler deploy)
@@ -54,3 +54,7 @@ refresh-db:
 		(cd apps/dashboard && npx wrangler d1 execute DB --local --file=../../$$file) || exit 1; \
 	done
 	@echo "Database refresh complete!"
+
+remote-migrate:
+	@echo "Applying migrations to remote D1 database..."
+	bash -c ". ~/.nvm/nvm.sh && nvm use && cd apps/dashboard && npx wrangler d1 migrations apply DB --remote"

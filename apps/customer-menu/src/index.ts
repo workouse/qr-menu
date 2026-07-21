@@ -1189,10 +1189,10 @@ app.get('/terms', async (c) => {
 // Image Upload Router
 app.use('*', async (c, next) => {
   const host = c.req.header('host') || '';
-  const mainDomain = 'qr-menu.workouse.com';
+  const isMainDomain = host === 'qr-menu.workouse.com' || host === 'qr-menu.com' || host.endsWith('.qr-menu.workouse.com') || host.endsWith('.qr-menu.com');
 
   // If host is not our main domain, try to resolve it as a custom domain
-  if (host && !host.includes('localhost') && !host.includes('127.0.0.1') && !host.includes('.workers.dev') && host !== mainDomain) {
+  if (host && !host.includes('localhost') && !host.includes('127.0.0.1') && !host.includes('.workers.dev') && !isMainDomain) {
     const lang = c.req.query('lang');
     let html = null;
     if (lang) {

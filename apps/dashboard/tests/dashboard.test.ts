@@ -24,6 +24,10 @@ import sql9 from '../../../packages/db/migrations/0009_nutrition_info.sql?raw';
 import sql10 from '../../../packages/db/migrations/0010_seed_fixtures.sql?raw';
 // @ts-ignore
 import sql11 from '../../../packages/db/migrations/0011_venue_custom_domain.sql?raw';
+// @ts-ignore
+import sql12 from '../../../packages/db/migrations/0012_add_org_owner.sql?raw';
+// @ts-ignore
+import sql13 from '../../../packages/db/migrations/0013_advanced_theming.sql?raw';
 
 declare module 'cloudflare:test' {
   interface ProvidedEnv {
@@ -34,7 +38,7 @@ declare module 'cloudflare:test' {
 describe('Dashboard API Integration', () => {
   beforeAll(async () => {
     // Setup D1 Schema with all migrations
-    const sqls = [sql1, sql2, sql3, sql4, sql5, sql6, sql7, sql8, sql9, sql10, sql11];
+    const sqls = [sql1, sql2, sql3, sql4, sql5, sql6, sql7, sql8, sql9, sql10, sql11, sql12, sql13];
     for (const sql of sqls) {
       const cleanSql = sql.replace(/--.*/g, '');
       const statements = cleanSql.split(';').map(s => s.trim()).filter(s => s.length > 0);
@@ -304,5 +308,104 @@ describe('Dashboard API Integration', () => {
     expect(html).toContain('data-en="Vegan"');
     expect(html).toContain('Allergens:');
     expect(html).toContain('nuts');
+  });
+
+  it('should return correct organization statistics', async () => {
+    const orgId = 'org_stats_test';
+    const venueId = 'venue_stats_test';
+    await env.DB.prepare('INSERT INTO organizations (id, name) VALUES (?, ?)').bind(orgId, 'Stats Org').run();
+    await env.DB.prepare('INSERT INTO users (id, org_id, email, role) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET org_id=excluded.org_id').bind('test_owner_stats', orgId, 'stats@auth.com', 'org_owner').run();
+    await env.DB.prepare('INSERT INTO venues (id, org_id, name, slug) VALUES (?, ?, ?, ?)').bind(venueId, orgId, 'Stats Venue', 'stats-venue').run();
+    const menuId = 'menu_stats_test';
+    await env.DB.prepare('INSERT INTO menus (id, venue_id, name, is_active) VALUES (?, ?, ?, 1)').bind(menuId, venueId, 'Stats Menu').run();
+    const catId = 'cat_stats_test';
+    await env.DB.prepare('INSERT INTO categories (id, menu_id, name, sort_order) VALUES (?, ?, ?, 1)').bind(catId, menuId, 'Stats Cat').run();
+    await env.DB.prepare('INSERT INTO items (id, category_id, name, price) VALUES (?, ?, ?, ?)')
+      .bind('item_stats_test', catId, 'Stats Item', 1000).run();
+    await env.DB.prepare('INSERT INTO subscriptions (id, org_id, tier, status) VALUES (?, ?, ?, ?)').bind('sub_stats_test', orgId, 'Standard', 'active').run();
+
+    const res = await app.request('/api/stats', {
+      method: 'GET',
+      headers: { 'Authorization': 'Bearer test_owner_stats' }
+    }, env);
+
+    expect(res.status).toBe(200);
+    const data = await res.json() as any;
+    expect(data.venues).toBe(1);
+    expect(data.menus).toBe(1);
+    expect(data.categories).toBe(1);
+    expect(data.items).toBe(1);
+    expect(data.plan).toBe('Standard');
+  });
+
+  it('should fetch user profile details correctly', async () => {
+    const resStandard = await app.request('/api/profile', {
+      method: 'GET',
+      headers: { 'Authorization': 'Bearer auth0|test_owner_standard' }
+    }, env);
+    expect(resStandard.status).toBe(200);
+    const dataStandard = await resStandard.json() as any;
+    expect(dataStandard.is_oauth).toBe(false);
+
+    const resOauth = await app.request('/api/profile', {
+      method: 'GET',
+      headers: { 'Authorization': 'Bearer google-oauth2|test_owner_oauth' }
+    }, env);
+    expect(resOauth.status).toBe(200);
+    const dataOauth = await resOauth.json() as any;
+    expect(dataOauth.is_oauth).toBe(true);
+  });
+
+  it('should allow profile updates for standard database connection users', async () => {
+    const userId = 'auth0|test_owner_update';
+    const orgId = 'org_profile_update';
+    await env.DB.prepare('INSERT INTO organizations (id, name) VALUES (?, ?)').bind(orgId, 'Profile Update Org').run();
+    await env.DB.prepare('INSERT INTO users (id, org_id, email, role) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET org_id=excluded.org_id').bind(userId, orgId, 'original@auth.com', 'org_owner').run();
+
+    const res = await app.request('/api/profile', {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${userId}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name: 'New Name',
+        phone: '+905551234567',
+        email: 'newemail@auth.com',
+        password: 'newsecurepassword'
+      })
+    }, env);
+
+    expect(res.status).toBe(200);
+    
+    const dbUser = await env.DB.prepare('SELECT email FROM users WHERE id = ?').bind(userId).first() as any;
+    expect(dbUser.email).toBe('newemail@auth.com');
+  });
+
+  it('should reject email/password updates for OAuth users', async () => {
+    const userId = 'google-oauth2|test_oauth_user';
+    const orgId = 'org_profile_oauth';
+    await env.DB.prepare('INSERT INTO organizations (id, name) VALUES (?, ?)').bind(orgId, 'Profile OAuth Org').run();
+    await env.DB.prepare('INSERT INTO users (id, org_id, email, role) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET org_id=excluded.org_id').bind(userId, orgId, 'oauth@auth.com', 'org_owner').run();
+
+    const resEmail = await app.request('/api/profile', {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${userId}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email: 'newoauth@auth.com' })
+    }, env);
+    expect(resEmail.status).toBe(400);
+
+    const resPass = await app.request('/api/profile', {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${userId}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ password: 'somepassword123' })
+    }, env);
+    expect(resPass.status).toBe(400);
   });
 });

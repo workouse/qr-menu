@@ -13,6 +13,7 @@ import { MenuBuilder } from './pages/MenuBuilder';
 import { Settings } from './pages/Settings';
 import { VenueSettings } from './pages/VenueSettings';
 import { Billing } from './pages/Billing';
+import { Profile } from './pages/Profile';
 import { useEffect } from 'react';
 
 function App() {
@@ -41,6 +42,7 @@ function App() {
         <Route path="/menus/:id/builder" element={<MenuBuilder />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/billing" element={<Billing />} />
+        <Route path="/profile" element={<Profile />} />
       </Route>
     </Routes>
   );

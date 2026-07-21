@@ -3,7 +3,7 @@ import { Outlet, Link } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '../api/client';
-import { Menu, X, LayoutDashboard, MapPin, Settings, LogOut, ChevronDown, Globe, BookOpen, CreditCard, Plus } from 'lucide-react';
+import { Menu, X, LayoutDashboard, MapPin, Settings, LogOut, ChevronDown, Globe, BookOpen, CreditCard, Plus, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useTierLimits } from '../hooks/useTierLimits';
 
@@ -18,6 +18,11 @@ export const DashboardLayout = () => {
   const { data: orgs } = useQuery({
     queryKey: ['organizations'],
     queryFn: () => fetchApi('/organizations', {}, getAccessTokenSilently),
+  });
+
+  const { data: profile } = useQuery({
+    queryKey: ['profile'],
+    queryFn: () => fetchApi('/profile', {}, getAccessTokenSilently),
   });
 
   const activeOrgId = localStorage.getItem('active_org_id');
@@ -96,6 +101,10 @@ export const DashboardLayout = () => {
           <Link to="/settings" className="flex items-center px-4 py-3 text-indigo-100 hover:bg-indigo-800 rounded-lg transition-colors">
             <Settings size={20} className="mr-3" />
             {t('settings')}
+          </Link>
+          <Link to="/profile" className="flex items-center px-4 py-3 text-indigo-100 hover:bg-indigo-800 rounded-lg transition-colors">
+            <User size={20} className="mr-3" />
+            {t('profile', 'Profile')}
           </Link>
           <Link to="/billing" className="flex items-center px-4 py-3 text-indigo-100 hover:bg-indigo-800 rounded-lg transition-colors">
             <CreditCard size={20} className="mr-3" />
@@ -187,7 +196,14 @@ export const DashboardLayout = () => {
               </div>
 
               <div className="flex items-center space-x-4">
-                <span className="text-sm font-medium text-gray-700">{user?.name}</span>
+                <Link 
+                  to="/profile" 
+                  className="text-sm font-medium text-gray-700 hover:text-indigo-650 transition-colors flex items-center gap-1.5"
+                  title={t('view_profile', 'View Profile')}
+                >
+                  <User size={16} className="text-gray-400" />
+                  <span>{profile?.name || user?.name || user?.email}</span>
+                </Link>
                 <button 
                   onClick={handleLogout}
                   className="text-gray-500 hover:text-red-600 transition-colors"

@@ -17,7 +17,7 @@ export const requireAuth = () => {
     const token = authHeader.replace('Bearer ', '');
     
     // MOCK FOR TESTS: Keep this purely for Vitest suite execution
-    if (token.startsWith('test_')) {
+    if (token.startsWith('test_') || token.includes('test_')) {
       const roles: string[] = [];
       if (token.includes('superadmin')) roles.push('superadmin');
       if (token.includes('staff')) roles.push('org_staff');

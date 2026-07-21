@@ -25,6 +25,10 @@ import sql9 from '../../../packages/db/migrations/0009_nutrition_info.sql?raw';
 import sql10 from '../../../packages/db/migrations/0010_seed_fixtures.sql?raw';
 // @ts-ignore
 import sql11 from '../../../packages/db/migrations/0011_venue_custom_domain.sql?raw';
+// @ts-ignore
+import sql12 from '../../../packages/db/migrations/0012_add_org_owner.sql?raw';
+// @ts-ignore
+import sql13 from '../../../packages/db/migrations/0013_advanced_theming.sql?raw';
 
 declare module 'cloudflare:test' {
   interface ProvidedEnv {
@@ -37,7 +41,7 @@ declare module 'cloudflare:test' {
 describe('Billing & Monetization (Lemon Squeezy)', () => {
   beforeAll(async () => {
     // Setup D1 Schema
-    const sqls = [sql1, sql2, sql3, sql4, sql5, sql6, sql7, sql8, sql9, sql10, sql11];
+    const sqls = [sql1, sql2, sql3, sql4, sql5, sql6, sql7, sql8, sql9, sql10, sql11, sql12, sql13];
     for (const sql of sqls) {
       const cleanSql = sql.replace(/--.*/g, '');
       const statements = cleanSql.split(';').map(s => s.trim()).filter(s => s.length > 0);

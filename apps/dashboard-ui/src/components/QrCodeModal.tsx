@@ -3,12 +3,15 @@ import QRCode from 'qrcode';
 import { jsPDF } from 'jspdf';
 import { X, Download, FileText, Image as ImageIcon, QrCode, CheckCircle, Copy } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { getVenueUrl } from '../utils/domain';
 
 interface QrCodeModalProps {
   isOpen: boolean;
   onClose: () => void;
   venueName: string;
   venueSlug: string;
+  customDomain?: string | null;
+  customDomainVerified?: boolean | number | null;
 }
 
 export const QrCodeModal: React.FC<QrCodeModalProps> = ({
@@ -16,33 +19,19 @@ export const QrCodeModal: React.FC<QrCodeModalProps> = ({
   onClose,
   venueName,
   venueSlug,
+  customDomain,
+  customDomainVerified,
 }) => {
   const [svgString, setSvgString] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [copied, setCopied] = useState<boolean>(false);
   const { t } = useTranslation();
 
-  // Helper to determine customer menu URL
-  const getCustomerMenuUrl = (slug: string) => {
-    if (import.meta.env.DEV) {
-      return `http://localhost:8788/${slug}`;
-    }
-    try {
-      const apiUrl = import.meta.env.VITE_API_URL || '';
-      if (apiUrl.includes('api.')) {
-        const url = new URL(apiUrl);
-        const baseDomain = url.origin.replace('api.', '');
-        return `${baseDomain}/${slug}`;
-      }
-    } catch (e) {
-      console.error(e);
-    }
-    const origin = window.location.origin;
-    const baseOrigin = origin.replace(/(dashboard|api)\./, '');
-    return `${baseOrigin}/${slug}`;
-  };
-
-  const targetUrl = getCustomerMenuUrl(venueSlug);
+  const targetUrl = getVenueUrl({
+    slug: venueSlug,
+    custom_domain: customDomain,
+    custom_domain_verified: customDomainVerified,
+  });
 
   useEffect(() => {
     if (isOpen && venueSlug) {
